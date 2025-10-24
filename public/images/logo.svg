@@ -1,0 +1,29 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="#8B5CF6" stroke="#A78BFA" stroke-width="3"/>
+  
+  <!-- Event Flow Symbol -->
+  <g transform="translate(100, 100)">
+    <!-- Center Node -->
+    <circle cx="0" cy="0" r="15" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- Top Node -->
+    <circle cx="0" cy="-45" r="12" fill="#C4B5FD" opacity="0.8"/>
+    <line x1="0" y1="-15" x2="0" y2="-33" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Right Node -->
+    <circle cx="45" cy="0" r="12" fill="#C4B5FD" opacity="0.8"/>
+    <line x1="15" y1="0" x2="33" y2="0" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Bottom Node -->
+    <circle cx="0" cy="45" r="12" fill="#C4B5FD" opacity="0.8"/>
+    <line x1="0" y1="15" x2="0" y2="33" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Left Node -->
+    <circle cx="-45" cy="0" r="12" fill="#C4B5FD" opacity="0.8"/>
+    <line x1="-15" y1="0" x2="-33" y2="0" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">EventMesh</text>
+</svg>
