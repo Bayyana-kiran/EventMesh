@@ -9,9 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, GitBranch, Zap, TrendingUp, Activity } from "lucide-react";
+import {
+  Plus,
+  GitBranch,
+  Zap,
+  TrendingUp,
+  Activity,
+  Send,
+  ArrowRight,
+  Inbox,
+  Sparkles,
+  Play,
+} from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface DashboardStats {
   totalFlows: number;
@@ -75,25 +87,85 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 animate-pulse">
+        {/* Header Skeleton */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Loading...</p>
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-5 w-96" />
           </div>
+          <Skeleton className="h-10 w-32" />
         </div>
+
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
+            <Card key={i} className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-transparent" />
+              <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
                 <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-5 rounded" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16" />
+              <CardContent className="relative">
+                <Skeleton className="h-8 w-20 mb-2" />
+                <Skeleton className="h-3 w-32" />
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Flows and Events Grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {[1, 2].map((i) => (
+            <Card key={i} className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-transparent" />
+              <CardHeader className="relative">
+                <Skeleton className="h-6 w-32 mb-2" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                {[1, 2, 3].map((j) => (
+                  <div
+                    key={j}
+                    className="flex items-center justify-between p-4 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <Skeleton className="h-3 w-3 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-transparent" />
+          <CardHeader className="relative">
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-56" />
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-3 p-6 rounded-lg border"
+                >
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-3 w-36" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -114,56 +186,82 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back! Here's what's happening with your event flows.
-          </p>
+      {/* Page header with gradient */}
+      <div className="relative">
+        {/* Subtle glow effect */}
+        <div className="absolute -top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Dashboard
+              </h1>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <Sparkles className="h-3 w-3" />
+                <span>Live</span>
+              </div>
+            </div>
+            <p className="text-muted-foreground text-base md:text-lg">
+              Welcome back! Here's what's happening with your event flows.
+            </p>
+          </div>
+          <Link href="/dashboard/flows/new">
+            <Button className="gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create Flow</span>
+            </Button>
+          </Link>
         </div>
-        <Link href="/dashboard/flows/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Flow
-          </Button>
-        </Link>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards with gradient effects */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Flows
             </CardTitle>
-            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <GitBranch className="h-5 w-5 text-purple-500" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalFlows || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-primary">{stats?.activeFlows || 0}</span>{" "}
-              active
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
+              {stats?.totalFlows || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-primary font-semibold">
+                {stats?.activeFlows || 0}
+              </span>{" "}
+              active flows
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-yellow-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Events Today
             </CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Zap className="h-5 w-5 text-yellow-500" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.eventsToday || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
+              {stats?.eventsToday || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
               <span
-                className={
+                className={cn(
+                  "font-semibold",
                   parseFloat(stats?.eventsChange || "0") >= 0
                     ? "text-primary"
                     : "text-destructive"
-                }
+                )}
               >
                 {parseFloat(stats?.eventsChange || "0") >= 0 ? "+" : ""}
                 {stats?.eventsChange}%
@@ -173,78 +271,122 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-green-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Success Rate
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.successRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">{stats?.successRate}%</div>
+            <p className="text-xs text-muted-foreground">
               {stats?.totalEvents || 0} total events
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Avg Latency
             </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Activity className="h-5 w-5 text-blue-500" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.avgLatency || 0}ms</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Last 50 executions
-            </p>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
+              {stats?.avgLatency || 0}ms
+            </div>
+            <p className="text-xs text-muted-foreground">Last 50 executions</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent flows */}
+      {/* Recent flows and events */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Flows</CardTitle>
-            <CardDescription>
-              Your most recently created event flows
-            </CardDescription>
+        <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-50" />
+          <CardHeader className="relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  Recent Flows
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Your most recently created event flows
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/flows">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  View All
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="relative">
+            <div className="space-y-3">
               {recentFlows.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <GitBranch className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No flows yet</p>
-                  <p className="text-xs mt-1">
+                <div className="text-center py-12">
+                  <div className="relative inline-flex mb-4">
+                    <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl" />
+                    <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-purple-500/10 to-purple-500/5 flex items-center justify-center">
+                      <GitBranch className="h-8 w-8 text-purple-500/50" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    No flows yet
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-4">
                     Create your first flow to get started
                   </p>
+                  <Link href="/dashboard/flows/new">
+                    <Button size="sm" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Flow
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 recentFlows.map((flow) => (
                   <Link key={flow.id} href={`/dashboard/flows/${flow.id}`}>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            flow.status === "active"
-                              ? "bg-primary"
-                              : "bg-muted-foreground"
-                          }`}
-                        />
-                        <div>
-                          <p className="font-medium">{flow.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {flow.eventsToday} events today
-                          </p>
+                    <div className="group relative overflow-hidden p-4 rounded-lg border border-border/50 hover:border-purple-500/50 transition-all duration-200 cursor-pointer hover:shadow-md hover:shadow-purple-500/5">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={cn(
+                              "h-2.5 w-2.5 rounded-full transition-all",
+                              flow.status === "active"
+                                ? "bg-primary shadow-lg shadow-primary/50 animate-pulse"
+                                : "bg-muted-foreground"
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate group-hover:text-primary transition-colors">
+                              {flow.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              <Zap className="h-3 w-3 inline mr-1" />
+                              {flow.eventsToday} events today
+                            </p>
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          View
+                          <ArrowRight className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
                     </div>
                   </Link>
                 ))
@@ -253,50 +395,96 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Events</CardTitle>
-            <CardDescription>Latest events processed</CardDescription>
+        <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-50" />
+          <CardHeader className="relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  Recent Events
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Latest events processed
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/events">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  View All
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="relative">
+            <div className="space-y-3">
               {recentEvents.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Zap className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No events yet</p>
-                  <p className="text-xs mt-1">
+                <div className="text-center py-12">
+                  <div className="relative inline-flex mb-4">
+                    <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl" />
+                    <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 flex items-center justify-center">
+                      <Inbox className="h-8 w-8 text-yellow-500/50" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    No events yet
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-4">
                     Send a webhook to see events here
                   </p>
+                  <Link href="/dashboard/playground">
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Play className="h-4 w-4" />
+                      Try Playground
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 recentEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
+                    className="group relative overflow-hidden p-4 rounded-lg border border-border/50 hover:border-yellow-500/50 transition-all duration-200 hover:shadow-md hover:shadow-yellow-500/5"
                   >
-                    <div>
-                      <p className="font-medium">{event.source}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.type}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div
-                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          event.status === "completed"
-                            ? "bg-primary/10 text-primary"
-                            : event.status === "failed"
-                            ? "bg-destructive/10 text-destructive"
-                            : event.status === "running"
-                            ? "bg-blue-500/10 text-blue-500"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {event.status}
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <p className="font-semibold truncate">
+                            {event.source}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {event.type}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {event.time}
-                      </p>
+                      <div className="text-right">
+                        <div
+                          className={cn(
+                            "inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mb-1",
+                            event.status === "completed"
+                              ? "bg-primary/10 text-primary"
+                              : event.status === "failed"
+                              ? "bg-destructive/10 text-destructive"
+                              : event.status === "running"
+                              ? "bg-blue-500/10 text-blue-500"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              event.status === "completed" && "bg-primary",
+                              event.status === "failed" && "bg-destructive",
+                              event.status === "running" &&
+                                "bg-blue-500 animate-pulse"
+                            )}
+                          />
+                          {event.status}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {event.time}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -306,49 +494,76 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Quick actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Get started with these common tasks</CardDescription>
+      {/* Quick actions with modern design */}
+      <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
+
+        {/* Subtle glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <CardHeader className="relative">
+          <CardTitle className="text-xl font-bold">Quick Actions</CardTitle>
+          <CardDescription className="mt-1">
+            Get started with these common tasks
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Link href="/dashboard/flows/new">
-              <Button
-                variant="outline"
-                className="w-full h-auto flex-col gap-2 p-6"
-              >
-                <GitBranch className="h-8 w-8" />
-                <span className="font-semibold">Create New Flow</span>
-                <span className="text-xs text-muted-foreground">
-                  Build a new event routing flow
-                </span>
-              </Button>
+              <div className="group relative overflow-hidden h-full p-6 rounded-lg border border-border/50 hover:border-primary/50 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-primary/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col items-center text-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <GitBranch className="h-7 w-7 text-purple-500" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-base block mb-1 group-hover:text-primary transition-colors">
+                      Create New Flow
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Build a new event routing flow
+                    </span>
+                  </div>
+                </div>
+              </div>
             </Link>
+
             <Link href="/dashboard/destinations/new">
-              <Button
-                variant="outline"
-                className="w-full h-auto flex-col gap-2 p-6"
-              >
-                <Zap className="h-8 w-8" />
-                <span className="font-semibold">Add Destination</span>
-                <span className="text-xs text-muted-foreground">
-                  Connect to Slack, Discord, etc.
-                </span>
-              </Button>
+              <div className="group relative overflow-hidden h-full p-6 rounded-lg border border-border/50 hover:border-green-500/50 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-green-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col items-center text-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Send className="h-7 w-7 text-green-500" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-base block mb-1 group-hover:text-green-500 transition-colors">
+                      Add Destination
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Connect to Slack, Discord, etc.
+                    </span>
+                  </div>
+                </div>
+              </div>
             </Link>
+
             <Link href="/dashboard/playground">
-              <Button
-                variant="outline"
-                className="w-full h-auto flex-col gap-2 p-6"
-              >
-                <Activity className="h-8 w-8" />
-                <span className="font-semibold">Test Webhook</span>
-                <span className="text-xs text-muted-foreground">
-                  Try the webhook playground
-                </span>
-              </Button>
+              <div className="group relative overflow-hidden h-full p-6 rounded-lg border border-border/50 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col items-center text-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Play className="h-7 w-7 text-cyan-500" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-base block mb-1 group-hover:text-cyan-500 transition-colors">
+                      Test Webhook
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Try the webhook playground
+                    </span>
+                  </div>
+                </div>
+              </div>
             </Link>
           </div>
         </CardContent>
