@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +13,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Key, Bell, Trash2, Copy, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  User,
+  Key,
+  Bell,
+  Trash2,
+  Copy,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { Spinner } from "@/components/ui/loading";
 
 interface WorkspaceData {
   id: string;
@@ -32,12 +51,16 @@ interface APIKey {
 }
 
 export default function SettingsPage() {
-  const [workspace, setWorkspace] = useState<WorkspaceData | null>(null);
+  const router = useRouter();
+  const { workspace, workspaces, deleteWorkspace } = useAuth();
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,13 +74,19 @@ export default function SettingsPage() {
   }, [workspace]);
 
   const fetchSettings = async () => {
+    if (!workspace) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/workspace/settings");
+      const response = await fetch(
+        `/api/workspace/settings?workspaceId=${workspace.$id}`
+      );
       const data = await response.json();
 
       if (data.success) {
-        setWorkspace(data.workspace);
-        setApiKeys(data.apiKeys);
+        setApiKeys(data.apiKeys || []);
       }
     } catch (err: any) {
       toast({
@@ -71,7 +100,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveWorkspace = async () => {
-    if (!workspace) return;
+    if (!workspace || !workspaceName.trim()) return;
 
     setSaving(true);
     try {
@@ -79,7 +108,7 @@ export default function SettingsPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          workspaceId: workspace.id,
+          workspaceId: workspace.$id,
           name: workspaceName,
         }),
       });
@@ -87,11 +116,11 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setWorkspace(data.workspace);
         toast({
           title: "Success",
           description: "Workspace settings updated",
         });
+        router.refresh();
       } else {
         throw new Error(data.error);
       }
@@ -103,6 +132,47 @@ export default function SettingsPage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteWorkspace = async () => {
+    if (!workspace || deleteConfirmation !== "DELETE") {
+      toast({
+        title: "Invalid confirmation",
+        description: "Please type DELETE to confirm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteWorkspace(workspace.$id, deleteConfirmation);
+
+      toast({
+        title: "Workspace deleted",
+        description:
+          "Your workspace and all data have been permanently deleted",
+      });
+
+      setShowDeleteDialog(false);
+      setDeleteConfirmation("");
+
+      // If there are other workspaces, stay in the app
+      // Otherwise, redirect to dashboard (will show empty state)
+      if (workspaces.length > 1) {
+        router.refresh();
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete workspace",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -169,7 +239,7 @@ export default function SettingsPage() {
                 <div className="flex gap-2">
                   <Input
                     id="workspace-id"
-                    value={workspace?.id || ""}
+                    value={workspace?.$id || ""}
                     readOnly
                     className="font-mono text-sm"
                   />
@@ -177,7 +247,7 @@ export default function SettingsPage() {
                     variant="outline"
                     size="icon"
                     onClick={() =>
-                      copyToClipboard(workspace?.id || "", "workspace")
+                      copyToClipboard(workspace?.$id || "", "workspace")
                     }
                   >
                     {copiedKey === "workspace" ? (
@@ -191,14 +261,17 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label>Created</Label>
                 <div className="text-sm text-muted-foreground">
-                  {workspace?.created
-                    ? new Date(workspace.created).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                  {workspace?.created_at
+                    ? new Date(workspace.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )
                     : "-"}
                 </div>
               </div>
@@ -219,9 +292,15 @@ export default function SettingsPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
                 Deleting your workspace will permanently remove all flows,
-                events, and executions. This action cannot be undone.
+                events, executions, destinations, API keys, and analytics. This
+                action cannot be undone.
               </p>
-              <Button variant="destructive" disabled>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={!workspace}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
                 Delete Workspace
               </Button>
             </CardContent>
@@ -346,6 +425,80 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Workspace
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              This action will permanently delete the workspace{" "}
+              <strong className="text-foreground">{workspace?.name}</strong> and
+              all associated data:
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>All flows and transformations</li>
+              <li>All event history</li>
+              <li>All execution logs</li>
+              <li>All destinations</li>
+              <li>All API keys</li>
+              <li>All analytics data</li>
+            </ul>
+            <p className="font-semibold text-destructive">
+              This action cannot be undone.
+            </p>
+          </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm">
+                Type <span className="font-mono font-bold">DELETE</span> to
+                confirm
+              </Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="DELETE"
+                className="font-mono"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmation("");
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteWorkspace}
+              disabled={deleteConfirmation !== "DELETE" || deleting}
+            >
+              {deleting ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Workspace
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
