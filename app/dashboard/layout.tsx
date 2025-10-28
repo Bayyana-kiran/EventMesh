@@ -258,7 +258,9 @@ export default function DashboardLayout({
                   {getUserInitials()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{user?.name || "User"}</p>
+                  <p className="text-sm font-semibold truncate">
+                    {user?.name || "User"}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {user?.email || "user@example.com"}
                   </p>
@@ -275,9 +277,9 @@ export default function DashboardLayout({
                     Settings
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="gap-2 text-xs"
                   onClick={handleLogout}
                 >
@@ -458,7 +460,9 @@ export default function DashboardLayout({
                     {getUserInitials()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{user?.name || "User"}</p>
+                    <p className="text-sm font-semibold truncate">
+                      {user?.name || "User"}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {user?.email || "user@example.com"}
                     </p>
@@ -475,9 +479,9 @@ export default function DashboardLayout({
                       Settings
                     </Button>
                   </Link>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="gap-2 text-xs"
                     onClick={handleLogout}
                   >
@@ -533,7 +537,7 @@ export default function DashboardLayout({
               <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
             </Button>
 
-            <div 
+            <div
               className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform"
               title={user?.email || "User"}
             >
