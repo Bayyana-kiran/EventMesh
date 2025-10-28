@@ -4,13 +4,17 @@ import { databases } from "@/lib/appwrite/server";
 // GET /api/events/[id] - Get event details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const Params = (await Promise.resolve(context.params)) as {
+      id: string;
+    };
+
     const event = await databases.getDocument(
       process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
       process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_EVENTS!,
-      params.id
+      Params.id
     );
 
     return NextResponse.json(event);

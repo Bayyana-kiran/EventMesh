@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import React, { Suspense } from "react";
 import "./globals.css";
 import { ClientLayout } from "./client-layout";
 
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ClientLayout>{children}</ClientLayout>
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <ClientLayout>{children}</ClientLayout>
+        </Suspense>
       </body>
     </html>
   );

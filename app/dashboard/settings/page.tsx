@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,31 +16,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  User,
-  Key,
-  Bell,
-  Trash2,
-  Copy,
-  Check,
-  AlertTriangle,
-} from "lucide-react";
+import { Key, Bell, Trash2, Copy, Check, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Spinner } from "@/components/ui/loading";
-
-interface WorkspaceData {
-  id: string;
-  name: string;
-  created: string;
-  settings: any;
-}
 
 interface APIKey {
   id: string;
@@ -63,17 +47,7 @@ export default function SettingsPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  useEffect(() => {
-    if (workspace) {
-      setWorkspaceName(workspace.name);
-    }
-  }, [workspace]);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     if (!workspace) {
       setLoading(false);
       return;
@@ -88,16 +62,26 @@ export default function SettingsPage() {
       if (data.success) {
         setApiKeys(data.apiKeys || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Error",
-        description: err.message || "Failed to fetch settings",
+        description: (err as Error).message || "Failed to fetch settings",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspace, toast]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (workspace) {
+      setWorkspaceName(workspace.name);
+    }
+  }, [workspace]);
 
   const handleSaveWorkspace = async () => {
     if (!workspace || !workspaceName.trim()) return;
@@ -124,10 +108,10 @@ export default function SettingsPage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Error",
-        description: err.message || "Failed to update settings",
+        description: (err as Error).message || "Failed to update settings",
         variant: "destructive",
       });
     } finally {
@@ -165,10 +149,10 @@ export default function SettingsPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Error",
-        description: err.message || "Failed to delete workspace",
+        description: (err as Error).message || "Failed to delete workspace",
         variant: "destructive",
       });
     } finally {
