@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { WorkspaceSelector } from "@/components/layout/WorkspaceSelector";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 const navigation = [
   {
@@ -88,6 +89,23 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.name) return "U";
+    const names = user.name.split(" ");
+    if (names.length === 1) return names[0][0].toUpperCase();
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -237,12 +255,12 @@ export default function DashboardLayout({
             <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold text-lg shadow-md">
-                  U
+                  {getUserInitials()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">User Name</p>
+                  <p className="text-sm font-semibold truncate">{user?.name || "User"}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    user@example.com
+                    {user?.email || "user@example.com"}
                   </p>
                 </div>
               </div>
@@ -257,7 +275,12 @@ export default function DashboardLayout({
                     Settings
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm" className="gap-2 text-xs">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 text-xs"
+                  onClick={handleLogout}
+                >
                   <LogOut className="h-3 w-3" />
                   Logout
                 </Button>
@@ -432,12 +455,12 @@ export default function DashboardLayout({
               <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold text-lg shadow-md">
-                    U
+                    {getUserInitials()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">User Name</p>
+                    <p className="text-sm font-semibold truncate">{user?.name || "User"}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      user@example.com
+                      {user?.email || "user@example.com"}
                     </p>
                   </div>
                 </div>
@@ -452,7 +475,12 @@ export default function DashboardLayout({
                       Settings
                     </Button>
                   </Link>
-                  <Button variant="outline" size="sm" className="gap-2 text-xs">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 text-xs"
+                    onClick={handleLogout}
+                  >
                     <LogOut className="h-3 w-3" />
                     Logout
                   </Button>
@@ -461,7 +489,7 @@ export default function DashboardLayout({
             ) : (
               <button className="w-full flex justify-center group">
                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold text-lg shadow-md group-hover:scale-110 transition-transform">
-                  U
+                  {getUserInitials()}
                 </div>
               </button>
             )}
@@ -505,8 +533,11 @@ export default function DashboardLayout({
               <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
             </Button>
 
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform">
-              U
+            <div 
+              className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform"
+              title={user?.email || "User"}
+            >
+              {getUserInitials()}
             </div>
           </div>
         </header>
