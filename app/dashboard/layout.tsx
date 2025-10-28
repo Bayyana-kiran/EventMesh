@@ -472,20 +472,6 @@ export default function DashboardLayout({
               />
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
-            </Button>
-
-            <div
-              className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform"
-              title={user?.email || "User"}
-            >
-              {getUserInitials()}
-            </div>
-          </div>
         </header>
 
         {/* Email Verification Banner */}
