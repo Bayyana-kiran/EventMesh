@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { account, databases } from "@/lib/appwrite/client";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
 import { Models, ID, Query } from "appwrite";
@@ -36,75 +42,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  function isRecord(x: unknown): x is Record<string, unknown> {
+    return typeof x === "object" && x !== null;
+  }
 
-  const loadWorkspaces = async (userId: string, selectFirst = true) => {
-    try {
-      const response = await databases.listDocuments<Workspace>(
-        APPWRITE_DATABASE_ID,
-        COLLECTION_IDS.WORKSPACES,
-        [Query.equal("owner_id", userId), Query.orderDesc("$createdAt")]
-      );
+  const loadWorkspaces = useCallback(
+    async (userId: string, selectFirst = true) => {
+      try {
+        const response = await databases.listDocuments<Workspace>(
+          APPWRITE_DATABASE_ID,
+          COLLECTION_IDS.WORKSPACES,
+          [Query.equal("owner_id", userId), Query.orderDesc("$createdAt")]
+        );
 
-      setWorkspaces(response.documents);
+        setWorkspaces(response.documents);
 
-      if (response.documents.length > 0) {
-        // Check for saved workspace in localStorage
-        const savedWorkspaceId = localStorage.getItem("currentWorkspaceId");
-        const savedWorkspace = savedWorkspaceId
-          ? response.documents.find((w) => w.$id === savedWorkspaceId)
-          : null;
+        if (response.documents.length > 0) {
+          // Check for saved workspace in localStorage
+          const savedWorkspaceId = localStorage.getItem("currentWorkspaceId");
+          const savedWorkspace = savedWorkspaceId
+            ? response.documents.find((w) => w.$id === savedWorkspaceId)
+            : null;
 
-        // Use saved workspace, or first one if selectFirst is true
-        if (savedWorkspace) {
-          setWorkspace(savedWorkspace);
-        } else if (selectFirst) {
-          setWorkspace(response.documents[0]);
-          localStorage.setItem("currentWorkspaceId", response.documents[0].$id);
-        }
-      } else {
-        // Create workspace if none exists
-        try {
-          const newWorkspace = await databases.createDocument<Workspace>(
-            APPWRITE_DATABASE_ID,
-            COLLECTION_IDS.WORKSPACES,
-            ID.unique(),
-            {
-              name: "My Workspace",
+          // Use saved workspace, or first one if selectFirst is true
+          if (savedWorkspace) {
+            setWorkspace(savedWorkspace);
+          } else if (selectFirst) {
+            setWorkspace(response.documents[0]);
+            localStorage.setItem(
+              "currentWorkspaceId",
+              response.documents[0].$id
+            );
+          }
+        } else {
+          // Create workspace if none exists
+          try {
+            const newWorkspace = await databases.createDocument<Workspace>(
+              APPWRITE_DATABASE_ID,
+              COLLECTION_IDS.WORKSPACES,
+              ID.unique(),
+              {
+                name: "My Workspace",
+                owner_id: userId,
+                created_at: new Date().toISOString(),
+                settings: JSON.stringify({
+                  timezone: "UTC",
+                  retention_days: 30,
+                }),
+              }
+            );
+            setWorkspaces([newWorkspace]);
+            setWorkspace(newWorkspace);
+            localStorage.setItem("currentWorkspaceId", newWorkspace.$id);
+          } catch (createError: unknown) {
+            console.error("Failed to create workspace:", createError);
+            console.error(
+              "Please set permissions on the 'workspaces' collection in Appwrite Console"
+            );
+            // Set a temporary workspace object so the app doesn't break
+            const tempWorkspace: Workspace = {
+              $id: "temp-workspace",
+              $sequence: 0,
+              $collectionId: "workspaces",
+              $databaseId: APPWRITE_DATABASE_ID,
+              $createdAt: new Date().toISOString(),
+              $updatedAt: new Date().toISOString(),
+              $permissions: [], // Add empty array or appropriate permissions
+              name: "Temporary Workspace (Fix Permissions)",
               owner_id: userId,
               created_at: new Date().toISOString(),
               settings: JSON.stringify({
                 timezone: "UTC",
                 retention_days: 30,
               }),
-            }
-          );
-          setWorkspaces([newWorkspace]);
-          setWorkspace(newWorkspace);
-          localStorage.setItem("currentWorkspaceId", newWorkspace.$id);
-        } catch (createError: any) {
-          console.error("Failed to create workspace:", createError);
-          console.error(
-            "Please set permissions on the 'workspaces' collection in Appwrite Console"
-          );
-          // Set a temporary workspace object so the app doesn't break
-          const tempWorkspace: any = {
-            $id: "temp-workspace",
-            name: "Temporary Workspace (Fix Permissions)",
-            owner_id: userId,
-            created_at: new Date().toISOString(),
-            settings: JSON.stringify({
-              timezone: "UTC",
-              retention_days: 30,
-            }),
-          };
-          setWorkspaces([tempWorkspace]);
-          setWorkspace(tempWorkspace);
+            };
+            setWorkspaces([tempWorkspace]);
+            setWorkspace(tempWorkspace);
+          }
         }
+      } catch (error) {
+        console.error("Failed to load workspaces:", error);
       }
-    } catch (error) {
-      console.error("Failed to load workspaces:", error);
-    }
-  };
+    },
+    []
+  );
 
   const switchWorkspace = async (workspaceId: string) => {
     const selectedWorkspace = workspaces.find((w) => w.$id === workspaceId);
@@ -162,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     try {
       const session = await account.get();
 
@@ -174,18 +195,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session.name === session.email
       ) {
         try {
-          // For GitHub OAuth users, try to get name from prefs
-          const prefs = session.prefs as any;
+          // For OAuth users, try to get name from prefs
+          const prefs = session.prefs;
           let newName = "";
 
-          // GitHub stores name in different possible locations
-          if (prefs?.name) {
-            newName = prefs.name;
-          } else if (prefs?.login) {
-            // GitHub username
-            newName = prefs.login;
-          } else {
-            // Fallback to email username
+          if (isRecord(prefs)) {
+            if (typeof prefs.name === "string") {
+              newName = prefs.name;
+            } else if (typeof prefs.login === "string") {
+              newName = prefs.login;
+            }
+          }
+
+          // Fallback to email username
+          if (!newName && session.email) {
             newName = session.email.split("@")[0];
           }
 
@@ -209,14 +232,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session);
         await loadWorkspaces(session.$id);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error("Failed to check session:", error);
       setUser(null);
       setWorkspace(null);
       setWorkspaces([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadWorkspaces]);
 
   useEffect(() => {
     checkSession();
@@ -234,7 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [checkSession]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -260,7 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string, name: string) => {
     try {
       // Create user account
-      const newUser = await account.create(ID.unique(), email, password, name);
+      await account.create(ID.unique(), email, password, name);
 
       // Send verification email
       try {

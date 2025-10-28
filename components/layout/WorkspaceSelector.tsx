@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Building2, Plus, Check, ChevronDown, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Building2, Plus, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

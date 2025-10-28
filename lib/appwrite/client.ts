@@ -16,7 +16,7 @@ export const functions = new Functions(client);
 export async function getCurrentUser() {
   try {
     return await account.get();
-  } catch (error) {
+  } catch {
     return null;
   }
 }

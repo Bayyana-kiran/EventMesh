@@ -10,7 +10,8 @@ import {
   useNodesState,
   useEdgesState,
   Connection,
-  Edge,
+  Node,
+  Edge as FlowEdge,
   NodeTypes,
   Panel,
 } from "@xyflow/react";
@@ -29,16 +30,35 @@ const nodeTypes: NodeTypes = {
   destination: DestinationNode,
 };
 
+interface FlowData {
+  nodes?: string;
+  edges?: string;
+  webhook_url?: string;
+  status?: string;
+  [k: string]: unknown;
+}
+
+type FlowNodeData = {
+  label?: string;
+  webhookUrl?: string;
+  type?: "javascript" | "webhook" | string;
+  [k: string]: unknown;
+};
+
 interface FlowCanvasProps {
   flowId: string;
-  initialFlow?: any;
+  initialFlow?: FlowData | null;
 }
 
 export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
   const { toast } = useToast();
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(
+    []
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>([]);
+  const [selectedNode, setSelectedNode] = useState<Node<FlowNodeData> | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
 
@@ -70,23 +90,26 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
     [setEdges]
   );
 
-  const onNodeClick = useCallback((_event: any, node: any) => {
-    setSelectedNode(node);
-  }, []);
+  const onNodeClick = useCallback(
+    (_event: unknown, node: Node<FlowNodeData>) => {
+      setSelectedNode(node);
+    },
+    []
+  );
 
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
   }, []);
 
   const handleNodeConfigUpdate = useCallback(
-    (nodeId: string, newData: any) => {
+    (nodeId: string, newData: Partial<FlowNodeData>) => {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
             return {
               ...node,
               data: { ...node.data, ...newData },
-            };
+            } as Node<FlowNodeData>;
           }
           return node;
         })
@@ -116,7 +139,8 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
         description: "Your flow has been saved successfully",
       });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Save failed",
         description: errorMessage || "Failed to save flow",
@@ -130,7 +154,7 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
   const toggleFlowStatus = async () => {
     setIsActivating(true);
     try {
-      const newStatus = initialFlow.status === "active" ? "paused" : "active";
+      const newStatus = initialFlow?.status === "active" ? "paused" : "active";
 
       const response = await fetch(`/api/flows/${flowId}`, {
         method: "PATCH",
@@ -150,7 +174,8 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
       // Refresh the page to show updated status
       window.location.reload();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Status update failed",
         description: errorMessage || "Failed to update flow status",
@@ -162,7 +187,7 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
   };
 
   const addSourceNode = () => {
-    const newNode = {
+    const newNode: Node<FlowNodeData> = {
       id: `source-${Date.now()}`,
       type: "source",
       position: { x: Math.random() * 300, y: Math.random() * 300 },
@@ -175,21 +200,21 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
   };
 
   const addTransformNode = () => {
-    const newNode = {
+    const newNode: Node<FlowNodeData> = {
       id: `transform-${Date.now()}`,
       type: "transform",
       position: { x: Math.random() * 300 + 300, y: Math.random() * 300 },
-      data: { label: "New Transform", type: "javascript" as const },
+      data: { label: "New Transform", type: "javascript" },
     };
     setNodes((nds) => [...nds, newNode]);
   };
 
   const addDestinationNode = () => {
-    const newNode: any = {
+    const newNode: Node<FlowNodeData> = {
       id: `destination-${Date.now()}`,
       type: "destination",
       position: { x: Math.random() * 300 + 600, y: Math.random() * 300 },
-      data: { label: "New Destination", type: "webhook" as const },
+      data: { label: "New Destination", type: "webhook" },
     };
     setNodes((nds) => [...nds, newNode]);
   };
