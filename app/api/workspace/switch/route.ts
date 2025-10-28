@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 // POST /api/workspace/switch - Switch to a different workspace
 export async function POST(request: NextRequest) {
@@ -21,7 +20,6 @@ export async function POST(request: NextRequest) {
       message: "Workspace switched successfully",
     });
 
-    const cookieStore = await cookies();
     response.cookies.set("currentWorkspaceId", workspaceId, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365, // 1 year
@@ -32,7 +30,8 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("POST /api/workspace/switch error:", error);
     return NextResponse.json(
       { success: false, error: errorMessage || "Failed to switch workspace" },

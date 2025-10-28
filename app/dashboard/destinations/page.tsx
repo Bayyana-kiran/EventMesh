@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus, Webhook, MessageSquare, Mail, Database } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { PageLoading } from "@/components/ui/loading";
 
@@ -34,17 +33,7 @@ export default function DestinationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (workspace?.$id) {
-      fetchDestinations();
-      const interval = setInterval(fetchDestinations, 30000);
-      return () => clearInterval(interval);
-    } else {
-      setLoading(false);
-    }
-  }, [workspace?.$id]);
-
-  const fetchDestinations = async () => {
+  const fetchDestinations = useCallback(async () => {
     if (!workspace?.$id) {
       setError("No workspace selected");
       setLoading(false);
@@ -65,13 +54,23 @@ export default function DestinationsPage() {
       } else {
         setError(data.error || "Failed to fetch destinations");
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(errMsg || "An error occurred");
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspace?.$id]);
 
+  useEffect(() => {
+    if (workspace?.$id) {
+      fetchDestinations();
+      const interval = setInterval(fetchDestinations, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id, fetchDestinations]);
   const getIcon = (type: string) => {
     switch (type) {
       case "slack":

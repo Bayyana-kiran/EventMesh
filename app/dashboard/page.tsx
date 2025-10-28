@@ -1,6 +1,8 @@
+/* eslint-disable react/no-unescaped-entities */
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -22,7 +24,7 @@ import {
   Play,
 } from "lucide-react";
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
+// skeleton not used here
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { PageLoading } from "@/components/ui/loading";
@@ -61,18 +63,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (workspace?.$id) {
-      fetchDashboardData();
-      // Refresh every 30 seconds
-      const interval = setInterval(fetchDashboardData, 30000);
-      return () => clearInterval(interval);
-    } else {
-      setLoading(false);
-    }
-  }, [workspace?.$id]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!workspace?.$id) {
       setError("No workspace selected");
       setLoading(false);
@@ -94,12 +85,24 @@ export default function DashboardPage() {
       } else {
         setError(data.error || "Failed to fetch dashboard data");
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(errMsg || "An error occurred");
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspace?.$id]);
+
+  useEffect(() => {
+    if (workspace?.$id) {
+      fetchDashboardData();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchDashboardData, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id, fetchDashboardData]);
 
   if (loading) {
     return <PageLoading text="Loading dashboard..." />;

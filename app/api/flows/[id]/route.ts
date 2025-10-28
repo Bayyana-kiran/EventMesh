@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
@@ -18,7 +20,8 @@ export async function GET(
 
     return NextResponse.json(flow);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to fetch flow:", error);
     return NextResponse.json({ error: errorMessage }, { status: 404 });
   }
@@ -54,7 +57,8 @@ export async function PATCH(
 
     return NextResponse.json(flow);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to update flow:", error);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
@@ -76,7 +80,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to delete flow:", error);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

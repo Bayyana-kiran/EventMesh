@@ -11,17 +11,12 @@ import {
   Github,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+// Card UI components intentionally omitted — not used in this page
 import { AnimatedFlowDemo } from "@/components/landing/AnimatedFlowDemo";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function HomePage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">

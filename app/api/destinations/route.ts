@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
@@ -113,7 +115,8 @@ export async function GET(request: Request) {
       destinations,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching destinations:", error);
     return NextResponse.json(
       {

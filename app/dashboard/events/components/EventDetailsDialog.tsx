@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+// no local state needed yet
 import {
   Dialog,
   DialogContent,
@@ -10,13 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  Calendar,
-  ArrowRight,
-} from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface EventDetailsDialogProps {
   eventId: string | null;

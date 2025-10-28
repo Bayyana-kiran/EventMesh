@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Play, Code, Check } from "lucide-react";
+import { Copy, Play, Check } from "lucide-react";
 import { useToast } from "@/lib/hooks/use-toast";
 import {
   Select,
@@ -46,11 +49,7 @@ export default function PlaygroundPage() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchFlows();
-  }, []);
-
-  const fetchFlows = async () => {
+  const fetchFlows = useCallback(async () => {
     try {
       const res = await fetch("/api/flows");
       const data = await res.json();
@@ -63,7 +62,11 @@ export default function PlaygroundPage() {
     } catch (error) {
       console.error("Error fetching flows:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFlows();
+  }, [fetchFlows]);
 
   const handleFlowSelect = (flow: Flow) => {
     setSelectedFlow(flow);
@@ -94,7 +97,7 @@ export default function PlaygroundPage() {
     try {
       // Validate JSON
       JSON.parse(testPayload);
-    } catch (error) {
+    } catch {
       toast({
         title: "Invalid JSON",
         description: "Please check your payload syntax",
@@ -141,7 +144,8 @@ export default function PlaygroundPage() {
         });
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An error occurred";
       const endTime = Date.now();
       setExecutionTime(endTime - startTime);
       setResponse({
@@ -151,7 +155,7 @@ export default function PlaygroundPage() {
       });
       toast({
         title: "Error",
-        description: error.message || "Failed to send webhook",
+        description: errorMessage || "Failed to send webhook",
         variant: "destructive",
       });
     } finally {

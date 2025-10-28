@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+// No card components used here; keep the component lightweight
 import { Button } from "@/components/ui/button";
 import {
   Calendar,

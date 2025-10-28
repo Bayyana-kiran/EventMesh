@@ -12,12 +12,10 @@ import {
   Play,
   Menu,
   X,
-  ChevronDown,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Send,
-  Building2,
   Bell,
   Search,
 } from "lucide-react";

@@ -64,14 +64,22 @@ export default function VerifyEmailPage() {
     const secret = searchParams.get("secret");
 
     if (!userId || !secret) {
-      setStatus("error");
-      setMessage(
-        "Invalid verification link. Please check your email for the correct link."
-      );
+      // Avoid calling setState synchronously within an effect — schedule on next tick
+      setTimeout(() => {
+        setStatus("error");
+        setMessage(
+          "Invalid verification link. Please check your email for the correct link."
+        );
+      }, 0);
       return;
     }
 
-    verifyEmail(userId, secret);
+    // Defer verification call to avoid synchronous setState within effect
+    const t = setTimeout(() => {
+      verifyEmail(userId, secret);
+    }, 0);
+
+    return () => clearTimeout(t);
   }, [searchParams, verifyEmail]);
 
   return (

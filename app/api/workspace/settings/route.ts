@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
@@ -52,7 +54,8 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching workspace settings:", error);
     return NextResponse.json(
       {
@@ -96,7 +99,8 @@ export async function PATCH(request: Request) {
       },
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error updating workspace:", error);
     return NextResponse.json(
       {

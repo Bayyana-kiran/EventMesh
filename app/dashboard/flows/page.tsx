@@ -9,14 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Plus,
-  GitBranch,
-  Play,
-  Pause,
-  MoreVertical,
-  TrendingUp,
-} from "lucide-react";
+import { Plus, GitBranch, MoreVertical } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useFlows } from "@/lib/hooks/useFlows";
 import { Badge } from "@/components/ui/badge";

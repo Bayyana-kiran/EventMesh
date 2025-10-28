@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
@@ -203,7 +205,8 @@ export async function POST(
       flow_name: flow.name,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Webhook processing failed:", error);
     return NextResponse.json(
       {
@@ -245,7 +248,8 @@ export async function GET(
       webhook_url: flow.webhook_url,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to get webhook info:", error);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

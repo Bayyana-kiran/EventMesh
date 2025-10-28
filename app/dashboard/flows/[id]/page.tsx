@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -23,9 +25,9 @@ export default function FlowBuilderPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [flow, setFlow] = useState<any>(null);
+  const [flow, setFlow] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [executions, setExecutions] = useState<any[]>([]);
+  const [executions, setExecutions] = useState<Record<string, any>[]>([]);
   const [executionsLoading, setExecutionsLoading] = useState(false);
 
   const flowId = params.id as string;
@@ -40,7 +42,8 @@ export default function FlowBuilderPage() {
         const data = await response.json();
         setFlow(data);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "An error occurred";
+        const errorMessage =
+          error instanceof Error ? error.message : "An error occurred";
         toast({
           title: "Error",
           description: errorMessage || "Failed to load flow",

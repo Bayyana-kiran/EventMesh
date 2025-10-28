@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,13 +11,11 @@ import {
 } from "@/components/ui/card";
 import {
   Calendar,
-  Clock,
   CheckCircle,
   XCircle,
   ArrowRight,
   RefreshCw,
 } from "lucide-react";
-import { PageLoading } from "@/components/ui/loading";
 
 interface Event {
   $id: string;
@@ -42,7 +40,7 @@ export default function EventsPage() {
     activeFlows: 0,
   });
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/events?limit=50");
@@ -82,11 +80,11 @@ export default function EventsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [fetchEvents]);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);

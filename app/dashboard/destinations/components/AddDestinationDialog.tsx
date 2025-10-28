@@ -21,13 +21,20 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 
+interface NewDestination {
+  name: string;
+  type: string;
+  webhookUrl?: string;
+  channel?: string;
+}
+
 interface AddDestinationDialogProps {
-  onAdd?: (destination: any) => void;
+  onAdd?: (destination: NewDestination) => void;
 }
 
 export function AddDestinationDialog({ onAdd }: AddDestinationDialogProps) {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<NewDestination>({
     name: "",
     type: "",
     webhookUrl: "",

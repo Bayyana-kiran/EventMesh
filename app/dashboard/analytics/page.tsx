@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -9,8 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, Activity, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { PageLoading } from "@/components/ui/loading";
 import {
@@ -71,18 +70,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (workspace?.$id) {
-      fetchAnalytics();
-      // Refresh every 60 seconds
-      const interval = setInterval(fetchAnalytics, 60000);
-      return () => clearInterval(interval);
-    } else {
-      setLoading(false);
-    }
-  }, [workspace?.$id]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (!workspace?.$id) {
       setError("No workspace selected");
       setLoading(false);
@@ -103,12 +91,24 @@ export default function AnalyticsPage() {
       } else {
         setError(result.error || "Failed to fetch analytics");
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(errMsg || "An error occurred");
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspace?.$id]);
+
+  useEffect(() => {
+    if (workspace?.$id) {
+      fetchAnalytics();
+      // Refresh every 60 seconds
+      const interval = setInterval(fetchAnalytics, 60000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id, fetchAnalytics]);
 
   if (loading) {
     return <PageLoading text="Loading analytics..." />;
@@ -276,14 +276,15 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: any) =>
-                        `${entry.name}: ${(
-                          (entry.value /
-                            (pieData.reduce((sum, p) => sum + p.value, 0) ||
-                              1)) *
+                      label={(entry: unknown) => {
+                        const e = entry as { name?: string; value?: number };
+                        const total =
+                          pieData.reduce((sum, p) => sum + p.value, 0) || 1;
+                        return `${e.name ?? ""}: ${(
+                          ((e.value ?? 0) / total) *
                           100
-                        ).toFixed(0)}%`
-                      }
+                        ).toFixed(0)}%`;
+                      }}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
