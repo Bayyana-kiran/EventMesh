@@ -35,7 +35,7 @@ export default function SignUpPage() {
       await signup(email, password, name);
       toast({
         title: "Account created!",
-        description: "Welcome to EventMesh. Your workspace is ready.",
+        description: "Please check your email to verify your account.",
       });
     } catch (error: any) {
       toast({

@@ -22,6 +22,8 @@ interface AuthContextType {
     workspaceId: string,
     confirmationText: string
   ) => Promise<void>;
+  resendVerification: () => Promise<void>;
+  isEmailVerified: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -163,8 +165,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkSession = async () => {
     try {
       const session = await account.get();
-      setUser(session);
-      await loadWorkspaces(session.$id);
+
+      // Check if user has no name (common with OAuth logins)
+      // Try to update it from their prefs or email
+      if (
+        !session.name ||
+        session.name === "" ||
+        session.name === session.email
+      ) {
+        try {
+          // For GitHub OAuth users, try to get name from prefs
+          const prefs = session.prefs as any;
+          let newName = "";
+
+          // GitHub stores name in different possible locations
+          if (prefs?.name) {
+            newName = prefs.name;
+          } else if (prefs?.login) {
+            // GitHub username
+            newName = prefs.login;
+          } else {
+            // Fallback to email username
+            newName = session.email.split("@")[0];
+          }
+
+          // Update the user's name if we found one
+          if (newName && newName !== session.name) {
+            await account.updateName(newName);
+            // Re-fetch session to get updated name
+            const updatedSession = await account.get();
+            setUser(updatedSession);
+            await loadWorkspaces(updatedSession.$id);
+          } else {
+            setUser(session);
+            await loadWorkspaces(session.$id);
+          }
+        } catch (updateError) {
+          console.error("Could not update user name:", updateError);
+          setUser(session);
+          await loadWorkspaces(session.$id);
+        }
+      } else {
+        setUser(session);
+        await loadWorkspaces(session.$id);
+      }
     } catch (error) {
       setUser(null);
       setWorkspace(null);
@@ -198,6 +242,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const session = await account.get();
       setUser(session);
       await loadWorkspaces(session.$id);
+
+      // Check if email is verified for email/password users
+      // OAuth users are automatically verified
+      if (!session.emailVerification) {
+        console.warn("Email not verified");
+        // Still allow login but show warning in UI
+      }
+
       router.push("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
@@ -207,12 +259,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (email: string, password: string, name: string) => {
     try {
-      await account.create(ID.unique(), email, password, name);
+      // Create user account
+      const newUser = await account.create(ID.unique(), email, password, name);
+
+      // Send verification email
+      try {
+        await account.createVerification(
+          `${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/verify-email`
+        );
+      } catch (verifyError) {
+        console.error("Failed to send verification email:", verifyError);
+        // Don't fail signup if verification email fails
+      }
+
+      // Log the user in
       await login(email, password);
     } catch (error: any) {
       console.error("Signup failed:", error);
       throw error;
     }
+  };
+
+  const resendVerification = async () => {
+    if (!user) {
+      throw new Error("No user logged in");
+    }
+
+    try {
+      await account.createVerification(
+        `${
+          typeof window !== "undefined" ? window.location.origin : ""
+        }/verify-email`
+      );
+    } catch (error: any) {
+      console.error("Failed to resend verification:", error);
+      throw error;
+    }
+  };
+
+  const isEmailVerified = (): boolean => {
+    if (!user) return false;
+    return user.emailVerification;
   };
 
   const logout = async () => {
@@ -243,6 +332,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         switchWorkspace,
         refreshWorkspaces,
         deleteWorkspace,
+        resendVerification,
+        isEmailVerified,
       }}
     >
       {children}

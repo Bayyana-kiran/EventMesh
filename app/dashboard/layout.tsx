@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { WorkspaceSelector } from "@/components/layout/WorkspaceSelector";
+import { EmailVerificationBanner } from "@/components/layout/EmailVerificationBanner";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const navigation = [
@@ -545,6 +546,9 @@ export default function DashboardLayout({
             </div>
           </div>
         </header>
+
+        {/* Email Verification Banner */}
+        <EmailVerificationBanner />
 
         {/* Page content */}
         <main className="relative flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
