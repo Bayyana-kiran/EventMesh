@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AnimatedFlowDemo } from "@/components/landing/AnimatedFlowDemo";
 
 export default function HomePage() {
   return (
@@ -67,50 +68,56 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <Zap className="h-4 w-4" />
-            <span>Powered by Appwrite & AI</span>
-          </div>
+      <section className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 overflow-hidden">
+        {/* Grid Background for entire hero section */}
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+          }}
+        />
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-            The Visual Event
-            <br />
-            <span className="text-primary">Routing Platform</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Capture, transform, and route webhook events in real-time with
-            AI-powered intelligence. The developer-first alternative to Zapier
-            and Make.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2">
-                Start Building Free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="#demo">
-              <Button size="lg" variant="outline" className="gap-2">
-                <Play className="h-4 w-4" />
-                Watch Demo
-              </Button>
-            </Link>
-          </div>
-
-          {/* Demo Image Placeholder */}
-          <div className="mt-16 rounded-lg border bg-card shadow-2xl overflow-hidden">
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-              <div className="text-center">
-                <GitBranch className="h-24 w-24 text-primary/40 mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Visual Flow Builder Demo
-                </p>
-              </div>
+        <div className="relative z-10 max-w-7xl mx-auto">
+          {/* Hero Content */}
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Zap className="h-4 w-4" />
+              <span>Powered by Appwrite & AI</span>
             </div>
+
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+              The Visual Event
+              <br />
+              <span className="text-primary">Routing Platform</span>
+            </h1>
+
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+              Capture, transform, and route webhook events in real-time with
+              AI-powered intelligence. The developer-first alternative to Zapier
+              and Make.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/signup">
+                <Button size="lg" className="gap-2">
+                  Start Building Free
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="#demo">
+                <Button size="lg" variant="outline" className="gap-2">
+                  <Play className="h-4 w-4" />
+                  Watch Demo
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Animated Flow Demo - Transparent, blends with background */}
+          <div className="w-full">
+            <AnimatedFlowDemo />
           </div>
         </div>
       </section>
