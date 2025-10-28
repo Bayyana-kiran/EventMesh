@@ -79,8 +79,67 @@ const settingsNav = [
     bgColor: "bg-gray-500/10",
   },
 ];
-
 type NavItemType = (typeof navigation)[number];
+
+const itemIsActive = (pathname: string | null, href: string) => {
+  if (!pathname) return false;
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(`${href}/`);
+};
+
+function NavItem({
+  item,
+  onClick,
+  collapsed: itemCollapsed,
+  pathname,
+}: {
+  item: NavItemType;
+  onClick?: () => void;
+  collapsed?: boolean;
+  pathname: string | null;
+}) {
+  const isActive = itemIsActive(pathname, item.href);
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
+      title={itemCollapsed ? item.name : undefined}
+      className={cn(
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        itemCollapsed && "justify-center",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {isActive && !itemCollapsed && (
+        <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-lg" />
+      )}
+      <div
+        className={cn(
+          "relative h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-200",
+          isActive
+            ? "bg-primary-foreground/10"
+            : `${item.bgColor} group-hover:scale-110`
+        )}
+      >
+        <item.icon
+          className={cn(
+            "h-5 w-5 relative z-10",
+            isActive ? "text-primary-foreground" : item.color
+          )}
+        />
+      </div>
+      {!itemCollapsed && <span className="relative z-10">{item.name}</span>}
+      {itemCollapsed && (
+        <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+          {item.name}
+        </div>
+      )}
+    </Link>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -91,67 +150,6 @@ export default function DashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
-
-  // Helper to decide active state. Make `/dashboard` exact-match so Overview
-  // isn't active for subroutes like `/dashboard/flows`.
-  const itemIsActive = (href: string) => {
-    if (!pathname) return false;
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
-
-  // Small reusable NavItem to reduce duplication between mobile/desktop nav.
-  const NavItem = ({
-    item,
-    onClick,
-    collapsed: itemCollapsed,
-  }: {
-    item: NavItemType;
-    onClick?: () => void;
-    collapsed?: boolean;
-  }) => {
-    const isActive = itemIsActive(item.href);
-    return (
-      <Link
-        href={item.href}
-        onClick={onClick}
-        aria-current={isActive ? "page" : undefined}
-        title={itemCollapsed ? item.name : undefined}
-        className={cn(
-          "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-          itemCollapsed && "justify-center",
-          isActive
-            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-        )}
-      >
-        {isActive && !itemCollapsed && (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-lg" />
-        )}
-        <div
-          className={cn(
-            "relative h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-200",
-            isActive
-              ? "bg-primary-foreground/10"
-              : `${item.bgColor} group-hover:scale-110`
-          )}
-        >
-          <item.icon
-            className={cn(
-              "h-5 w-5 relative z-10",
-              isActive ? "text-primary-foreground" : item.color
-            )}
-          />
-        </div>
-        {!itemCollapsed && <span className="relative z-10">{item.name}</span>}
-        {itemCollapsed && (
-          <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
-            {item.name}
-          </div>
-        )}
-      </Link>
-    );
-  };
 
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -237,6 +235,7 @@ export default function DashboardLayout({
                 key={item.name}
                 item={item}
                 onClick={() => setSidebarOpen(false)}
+                pathname={pathname}
               />
             ))}
 
@@ -249,6 +248,7 @@ export default function DashboardLayout({
                   key={item.name}
                   item={item}
                   onClick={() => setSidebarOpen(false)}
+                  pathname={pathname}
                 />
               ))}
             </div>
@@ -368,7 +368,12 @@ export default function DashboardLayout({
               </p>
             )}
             {navigation.map((item) => (
-              <NavItem key={item.name} item={item} collapsed={collapsed} />
+              <NavItem
+                key={item.name}
+                item={item}
+                collapsed={collapsed}
+                pathname={pathname}
+              />
             ))}
 
             {!collapsed && (
@@ -377,7 +382,12 @@ export default function DashboardLayout({
                   Configuration
                 </p>
                 {settingsNav.map((item) => (
-                  <NavItem key={item.name} item={item} collapsed={collapsed} />
+                  <NavItem
+                    key={item.name}
+                    item={item}
+                    collapsed={collapsed}
+                    pathname={pathname}
+                  />
                 ))}
               </div>
             )}
