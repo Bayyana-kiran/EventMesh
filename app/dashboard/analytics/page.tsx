@@ -11,6 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth/AuthContext";
 import {
   LineChart,
   Line,
@@ -64,20 +65,35 @@ const COLORS = {
 };
 
 export default function AnalyticsPage() {
+  const { workspace } = useAuth();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAnalytics();
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchAnalytics, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    if (workspace?.$id) {
+      fetchAnalytics();
+      // Refresh every 60 seconds
+      const interval = setInterval(fetchAnalytics, 60000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id]);
 
   const fetchAnalytics = async () => {
+    if (!workspace?.$id) {
+      setError("No workspace selected");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/analytics?days=7");
+      const params = new URLSearchParams();
+      params.append("workspaceId", workspace.$id);
+      params.append("days", "7");
+
+      const response = await fetch(`/api/analytics?${params}`);
       const result = await response.json();
 
       if (result.success) {

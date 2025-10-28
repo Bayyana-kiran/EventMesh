@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Plus, Webhook, MessageSquare, Mail, Database } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 interface Destination {
   id: string;
@@ -26,20 +27,34 @@ interface Destination {
 }
 
 export default function DestinationsPage() {
+  const { workspace } = useAuth();
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, eventsToday: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDestinations();
-    const interval = setInterval(fetchDestinations, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (workspace?.$id) {
+      fetchDestinations();
+      const interval = setInterval(fetchDestinations, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id]);
 
   const fetchDestinations = async () => {
+    if (!workspace?.$id) {
+      setError("No workspace selected");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/destinations");
+      const params = new URLSearchParams();
+      params.append("workspaceId", workspace.$id);
+
+      const response = await fetch(`/api/destinations?${params}`);
       const data = await response.json();
 
       if (data.success) {

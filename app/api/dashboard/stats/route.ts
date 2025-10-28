@@ -12,15 +12,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get("workspaceId");
 
-    if (!workspaceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Workspace ID is required",
-        },
-        { status: 400 }
-      );
-    }
+    // Make workspaceId optional - if not provided, return data for all workspaces
+    // This allows the page to load even without workspace context
 
     // Get total flows - without workspace filter
     const flowsResponse = await databases.listDocuments(
@@ -29,10 +22,12 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
-    // Filter manually
-    const flows = flowsResponse.documents.filter(
-      (f: any) => !f.workspace_id || f.workspace_id === workspaceId
-    );
+    // Filter by workspace if provided
+    const flows = workspaceId
+      ? flowsResponse.documents.filter(
+          (f: any) => f.workspace_id === workspaceId
+        )
+      : flowsResponse.documents;
     const totalFlows = flows.length;
     const activeFlows = flows.filter((f: any) => f.status === "active").length;
 
@@ -46,9 +41,11 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
-    const events = eventsResponse.documents.filter(
-      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
-    );
+    const events = workspaceId
+      ? eventsResponse.documents.filter(
+          (e: any) => e.workspace_id === workspaceId
+        )
+      : eventsResponse.documents;
 
     const eventsToday = events.filter((e: any) => {
       const eventDate = new Date(e.$createdAt);
@@ -72,9 +69,11 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
-    const executions = executionsResponse.documents.filter(
-      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
-    );
+    const executions = workspaceId
+      ? executionsResponse.documents.filter(
+          (e: any) => e.workspace_id === workspaceId
+        )
+      : executionsResponse.documents;
 
     const completedExecutions = executions.filter(
       (e: any) => e.status === "completed"

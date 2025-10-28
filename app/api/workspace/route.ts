@@ -2,28 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { COLLECTION_IDS } from "@/lib/types";
 import { ID, Query } from "node-appwrite";
-import { cookies } from "next/headers";
 
 // GET /api/workspace - List all workspaces for the current user
 export async function GET(request: NextRequest) {
   try {
-    // Get user ID from session (you may need to adjust this based on your auth setup)
-    const cookieStore = await cookies();
-    const session = cookieStore.get("session");
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get("userId");
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
+        { success: false, error: "User ID is required" },
+        { status: 400 }
       );
     }
-
-    // For demo purposes, using a placeholder user ID
-    // In production, extract this from your session/auth token
-    const userId = session.value || "demo-user-id";
-
-    // Get current workspace from cookie
-    const currentWorkspaceId = cookieStore.get("currentWorkspaceId")?.value;
 
     // List all workspaces for this user
     const response = await databases.listDocuments(
@@ -33,14 +24,11 @@ export async function GET(request: NextRequest) {
     );
 
     const workspaces = response.documents;
-    const current = currentWorkspaceId
-      ? workspaces.find((w) => w.$id === currentWorkspaceId)
-      : workspaces[0];
 
     return NextResponse.json({
       success: true,
       workspaces,
-      current: current || null,
+      current: workspaces[0] || null,
     });
   } catch (error: any) {
     console.error("GET /api/workspace error:", error);
@@ -55,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name } = body;
+    const { name, userId } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
@@ -64,18 +52,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user ID from session
-    const cookieStore = await cookies();
-    const session = cookieStore.get("session");
-
-    if (!session) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
+        { success: false, error: "User ID is required" },
+        { status: 400 }
       );
     }
 
-    const userId = session.value || "demo-user-id";
+    // Create the workspace
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "User ID is required" },
+        { status: 400 }
+      );
+    }
 
     // Create the workspace
     const workspace = await databases.createDocument(
@@ -93,22 +83,11 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Set as current workspace
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       workspace,
       message: "Workspace created successfully",
     });
-
-    response.cookies.set("currentWorkspaceId", workspace.$id, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365, // 1 year
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
-    return response;
   } catch (error: any) {
     console.error("POST /api/workspace error:", error);
 

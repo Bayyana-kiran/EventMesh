@@ -13,15 +13,8 @@ export async function GET(request: Request) {
     const workspaceId = searchParams.get("workspaceId");
     const days = parseInt(searchParams.get("days") || "7");
 
-    if (!workspaceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Workspace ID is required",
-        },
-        { status: 400 }
-      );
-    }
+    // Make workspaceId optional - if not provided, return data for all workspaces
+    // This allows the page to load even without workspace context
 
     // Get all data - remove workspace_id filter since not all collections have it
     const flowsResponse = await databases.listDocuments(
@@ -42,16 +35,22 @@ export async function GET(request: Request) {
       [Query.limit(500)]
     );
 
-    // Filter by workspace manually if needed
-    const flows = flowsResponse.documents.filter(
-      (f: any) => !f.workspace_id || f.workspace_id === workspaceId
-    );
-    const events = eventsResponse.documents.filter(
-      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
-    );
-    const executions = executionsResponse.documents.filter(
-      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
-    );
+    // Filter by workspace if provided
+    const flows = workspaceId
+      ? flowsResponse.documents.filter(
+          (f: any) => f.workspace_id === workspaceId
+        )
+      : flowsResponse.documents;
+    const events = workspaceId
+      ? eventsResponse.documents.filter(
+          (e: any) => e.workspace_id === workspaceId
+        )
+      : eventsResponse.documents;
+    const executions = workspaceId
+      ? executionsResponse.documents.filter(
+          (e: any) => e.workspace_id === workspaceId
+        )
+      : executionsResponse.documents;
 
     // Calculate KPIs
     const totalEvents = events.length;

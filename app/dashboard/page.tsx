@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 interface DashboardStats {
   totalFlows: number;
@@ -52,6 +53,7 @@ interface RecentEvent {
 }
 
 export default function DashboardPage() {
+  const { workspace } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentFlows, setRecentFlows] = useState<RecentFlow[]>([]);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
@@ -59,15 +61,28 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardData();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (workspace?.$id) {
+      fetchDashboardData();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchDashboardData, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setLoading(false);
+    }
+  }, [workspace?.$id]);
 
   const fetchDashboardData = async () => {
+    if (!workspace?.$id) {
+      setError("No workspace selected");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/dashboard/stats");
+      const params = new URLSearchParams();
+      params.append("workspaceId", workspace.$id);
+
+      const response = await fetch(`/api/dashboard/stats?${params}`);
       const data = await response.json();
 
       if (data.success) {

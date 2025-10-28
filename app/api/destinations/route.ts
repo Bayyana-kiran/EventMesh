@@ -11,15 +11,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get("workspaceId");
 
-    if (!workspaceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Workspace ID is required",
-        },
-        { status: 400 }
-      );
-    }
+    // Make workspaceId optional - if not provided, return all destinations
+    // This allows the page to load even without workspace context
+
+    // Make workspaceId optional - if not provided, return all destinations
+    // This allows the page to load even without workspace context
 
     // Get all flows
     const flowsResponse = await databases.listDocuments(
@@ -28,9 +24,11 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
-    const flows = flowsResponse.documents.filter(
-      (f: any) => !f.workspace_id || f.workspace_id === workspaceId
-    );
+    const flows = workspaceId
+      ? flowsResponse.documents.filter(
+          (f: any) => f.workspace_id === workspaceId
+        )
+      : flowsResponse.documents;
 
     // Get executions for today
     const today = new Date();
@@ -42,9 +40,11 @@ export async function GET(request: Request) {
       [Query.limit(500)]
     );
 
-    const executions = executionsResponse.documents.filter(
-      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
-    );
+    const executions = workspaceId
+      ? executionsResponse.documents.filter(
+          (e: any) => e.workspace_id === workspaceId
+        )
+      : executionsResponse.documents;
 
     const executionsToday = executions.filter((e: any) => {
       const execDate = new Date(e.$createdAt);
