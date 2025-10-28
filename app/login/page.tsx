@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Zap, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useToast } from "@/lib/hooks/use-toast";
+import { account } from "@/lib/appwrite/client";
+import { OAuthProvider } from "appwrite";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -41,6 +43,23 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGithubLogin = async () => {
+    try {
+      // Redirect to GitHub OAuth
+      await account.createOAuth2Session(
+        OAuthProvider.Github,
+        `${window.location.origin}/dashboard`, // Success redirect
+        `${window.location.origin}/login` // Failure redirect
+      );
+    } catch (error: any) {
+      toast({
+        title: "GitHub login failed",
+        description: error.message || "Could not authenticate with GitHub",
+        variant: "destructive",
+      });
     }
   };
 
@@ -108,6 +127,31 @@ export default function LoginPage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            {/* OAuth Buttons */}
+            <div className="space-y-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleGithubLogin}
+              >
+                <Github className="h-5 w-5" />
+                Continue with GitHub
+              </Button>
+            </div>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">
