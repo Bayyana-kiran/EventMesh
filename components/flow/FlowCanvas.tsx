@@ -118,6 +118,17 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
     [setNodes]
   );
 
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) =>
+        eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+      );
+      setSelectedNode(null);
+    },
+    [setNodes, setEdges]
+  );
+
   const saveFlow = async () => {
     setIsSaving(true);
     try {
@@ -315,6 +326,7 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
         <NodeConfigPanel
           node={selectedNode}
           onUpdate={(data) => handleNodeConfigUpdate(selectedNode.id, data)}
+          onDelete={(id) => handleDeleteNode(id)}
           onClose={() => setSelectedNode(null)}
         />
       )}

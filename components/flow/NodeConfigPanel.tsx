@@ -19,12 +19,14 @@ import { X, Save, Code, Webhook, Send } from "lucide-react";
 interface NodeConfigPanelProps {
   node: any;
   onUpdate: (data: any) => void;
+  onDelete?: (nodeId: string) => void;
   onClose: () => void;
 }
 
 export function NodeConfigPanel({
   node,
   onUpdate,
+  onDelete,
   onClose,
 }: NodeConfigPanelProps) {
   const [config, setConfig] = useState<any>(node.data);
@@ -35,6 +37,13 @@ export function NodeConfigPanel({
 
   const handleSave = () => {
     onUpdate(config);
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(node.id);
+    }
     onClose();
   };
 
@@ -290,6 +299,11 @@ return {
             <Save className="h-4 w-4" />
             Save Configuration
           </Button>
+
+          <Button variant="destructive" onClick={handleDelete}>
+            Delete
+          </Button>
+
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
