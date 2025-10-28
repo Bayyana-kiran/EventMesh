@@ -122,188 +122,359 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Why EventMesh? */}
       <section
         id="features"
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-20"
+        className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 overflow-hidden"
       >
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Why EventMesh?
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to build sophisticated event-driven workflows
-          </p>
-        </div>
+        {/* Grid Background */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+          }}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <GitBranch className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Visual Flow Builder</CardTitle>
-              <CardDescription>
-                Drag-and-drop nodes to create complex event routing flows. See
-                your data flow in real-time with animated visualizations.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Gradient Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-3xl" />
 
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Bot className="h-6 w-6 text-secondary" />
-              </div>
-              <CardTitle>AI-Powered Transformations</CardTitle>
-              <CardDescription>
-                Let AI automatically detect payload structure, suggest
-                transformations, and generate code snippets instantly.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        <div className="relative z-10 max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16 md:mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <Zap className="h-4 w-4" />
+              <span>Platform Features</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              Why EventMesh?
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Everything you need to build sophisticated event-driven workflows
+            </p>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-accent" />
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {/* Feature 1 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <GitBranch className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  Visual Flow Builder
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Drag-and-drop nodes to create complex event routing flows. See
+                  your data flow in real-time with animated visualizations.
+                </p>
               </div>
-              <CardTitle>Real-time Processing</CardTitle>
-              <CardDescription>
-                Process events in real-time with sub-second latency. Watch
-                executions flow through your pipeline live.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <BarChart3 className="h-6 w-6 text-primary" />
+            {/* Feature 2 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-secondary/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <Bot className="h-7 w-7 text-secondary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  AI-Powered Transformations
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Let AI automatically detect payload structure, suggest
+                  transformations, and generate code snippets instantly.
+                </p>
               </div>
-              <CardTitle>Analytics & Insights</CardTitle>
-              <CardDescription>
-                Track event volume, success rates, latency metrics, and more
-                with beautiful real-time dashboards.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Play className="h-6 w-6 text-secondary" />
+            {/* Feature 3 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-accent/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-accent/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="h-7 w-7 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  Real-time Processing
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Process events in real-time with sub-second latency. Watch
+                  executions flow through your pipeline live.
+                </p>
               </div>
-              <CardTitle>Event Replay</CardTitle>
-              <CardDescription>
-                Replay any event with original or modified payloads. Perfect for
-                debugging and testing.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-accent" />
+            {/* Feature 4 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  Analytics & Insights
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Track event volume, success rates, latency metrics, and more
+                  with beautiful real-time dashboards.
+                </p>
               </div>
-              <CardTitle>Developer-First</CardTitle>
-              <CardDescription>
-                Built by developers, for developers. Full API access, webhook
-                playground, and extensive documentation.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-secondary/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <Play className="h-7 w-7 text-secondary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  Event Replay
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Replay any event with original or modified payloads. Perfect
+                  for debugging and testing.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="group relative bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 md:p-8 hover:border-accent/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+              <div className="relative">
+                <div className="h-14 w-14 rounded-xl bg-accent/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="h-7 w-7 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-foreground">
+                  Developer-First
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Built by developers, for developers. Full API access, webhook
+                  playground, and extensive documentation.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* How It Works */}
       <section
         id="how-it-works"
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-muted/30 rounded-lg"
+        className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 overflow-hidden"
       >
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Get started in minutes, scale to millions of events
-          </p>
-        </div>
+        {/* Grid Background */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+          }}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="text-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              1
+        {/* Gradient Glow */}
+        <div className="absolute top-1/2 right-0 w-[30rem] h-[30rem] bg-secondary/5 rounded-full blur-3xl" />
+
+        <div className="relative z-10 max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16 md:mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
+              <Play className="h-4 w-4" />
+              <span>Simple Process</span>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Create a Flow</h3>
-            <p className="text-muted-foreground">
-              Use our visual builder or AI to generate flows from natural
-              language
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Get started in minutes, scale to millions of events
             </p>
           </div>
 
-          <div className="text-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              2
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Send Webhooks</h3>
-            <p className="text-muted-foreground">
-              Point your services to your unique webhook URL and start sending
-              events
-            </p>
-          </div>
+          {/* Steps */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 max-w-6xl mx-auto">
+            {/* Step 1 */}
+            <div className="relative group text-center">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300" />
+                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/80 border-4 border-background flex items-center justify-center shadow-xl">
+                  <span className="text-3xl font-bold text-primary-foreground">
+                    1
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">
+                Create a Flow
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Use our visual builder or AI to generate flows from natural
+                language
+              </p>
 
-          <div className="text-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              3
+              {/* Connector Line - Hidden on mobile */}
+              <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/50 to-secondary/50" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Watch It Flow</h3>
-            <p className="text-muted-foreground">
-              Monitor events in real-time as they transform and route to
-              destinations
-            </p>
+
+            {/* Step 2 */}
+            <div className="relative group text-center">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 bg-secondary/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300" />
+                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-secondary to-secondary/80 border-4 border-background flex items-center justify-center shadow-xl">
+                  <span className="text-3xl font-bold text-secondary-foreground">
+                    2
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">
+                Send Webhooks
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Point your services to your unique webhook URL and start sending
+                events
+              </p>
+
+              {/* Connector Line - Hidden on mobile */}
+              <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-secondary/50 to-primary/50" />
+            </div>
+
+            {/* Step 3 */}
+            <div className="relative group text-center">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300" />
+                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/80 border-4 border-background flex items-center justify-center shadow-xl">
+                  <span className="text-3xl font-bold text-primary-foreground">
+                    3
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">
+                Watch It Flow
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Monitor events in real-time as they transform and route to
+                destinations
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="max-w-3xl mx-auto text-center bg-primary/5 border border-primary/20 rounded-2xl p-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+      {/* CTA Section - Minimal */}
+      <section className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 overflow-hidden">
+        {/* Grid Background */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+          }}
+        />
+
+        {/* Subtle Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <Zap className="h-4 w-4" />
+            <span>Get Started Today</span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             Ready to Build Something Amazing?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Join developers building the future of event-driven architecture
+
+          {/* Description */}
+          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+            Join developers building the future of event-driven architecture.
+            Start for free, no credit card required.
           </p>
-          <Link href="/signup">
-            <Button size="lg" className="gap-2">
-              Get Started Free
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/signup">
+              <Button size="lg" className="gap-2 text-base px-8 py-6">
+                Get Started Free
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/docs">
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 text-base px-8 py-6"
+              >
+                View Documentation
+              </Button>
+            </Link>
+          </div>
+
+          {/* Simple Feature List */}
+          <p className="mt-8 text-sm text-muted-foreground">
+            ✨ 10,000 events/month free · No credit card required · Cancel
+            anytime
+          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
+      <footer className="relative border-t border-border bg-card/30 backdrop-blur-sm">
+        {/* Subtle grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.05]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+          }}
+        />
+
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
+            {/* Brand Column */}
+            <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <Zap className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">EventMesh</span>
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-primary" />
+                </div>
+                <span className="text-2xl font-bold">EventMesh</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                The developer&apos;s global event routing network
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
+                The developer&apos;s global event routing network. Build
+                sophisticated event-driven workflows with ease.
               </p>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="https://github.com/yourusername/eventmesh"
+                  target="_blank"
+                  className="h-9 w-9 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="https://twitter.com/eventmesh"
+                  target="_blank"
+                  className="h-9 w-9 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-sm font-bold">𝕏</span>
+                </Link>
+              </div>
             </div>
 
+            {/* Product Column */}
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-bold mb-4 text-foreground">Product</h3>
+              <ul className="space-y-3 text-sm">
                 <li>
                   <Link
                     href="#features"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     Features
                   </Link>
@@ -311,7 +482,7 @@ export default function HomePage() {
                 <li>
                   <Link
                     href="/pricing"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     Pricing
                   </Link>
@@ -319,21 +490,30 @@ export default function HomePage() {
                 <li>
                   <Link
                     href="/docs"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/changelog"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Changelog
                   </Link>
                 </li>
               </ul>
             </div>
 
+            {/* Company Column */}
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-bold mb-4 text-foreground">Company</h3>
+              <ul className="space-y-3 text-sm">
                 <li>
                   <Link
                     href="/about"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     About
                   </Link>
@@ -341,7 +521,7 @@ export default function HomePage() {
                 <li>
                   <Link
                     href="/blog"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     Blog
                   </Link>
@@ -349,39 +529,79 @@ export default function HomePage() {
                 <li>
                   <Link
                     href="/contact"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/careers"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Careers
                   </Link>
                 </li>
               </ul>
             </div>
 
+            {/* Legal Column */}
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-bold mb-4 text-foreground">Legal</h3>
+              <ul className="space-y-3 text-sm">
                 <li>
                   <Link
                     href="/privacy"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    Privacy
+                    Privacy Policy
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/terms"
-                    className="hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    Terms
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/security"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Security
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 EventMesh. Built with ❤️ using Appwrite.</p>
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              &copy; 2025 EventMesh. Built with ❤️ using Appwrite.
+            </p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <Link
+                href="/status"
+                className="hover:text-primary transition-colors"
+              >
+                Status
+              </Link>
+              <Link
+                href="/sitemap"
+                className="hover:text-primary transition-colors"
+              >
+                Sitemap
+              </Link>
+              <Link
+                href="/cookies"
+                className="hover:text-primary transition-colors"
+              >
+                Cookies
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
