@@ -37,10 +37,12 @@ export default function SignUpPage() {
         title: "Account created!",
         description: "Please check your email to verify your account.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Could not create account";
       toast({
         title: "Signup failed",
-        description: error.message || "Could not create account",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -56,10 +58,14 @@ export default function SignUpPage() {
         `${window.location.origin}/dashboard`, // Success redirect
         `${window.location.origin}/signup` // Failure redirect
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Could not authenticate with GitHub";
       toast({
         title: "GitHub signup failed",
-        description: error.message || "Could not authenticate with GitHub",
+        description: errorMessage,
         variant: "destructive",
       });
     }

@@ -85,7 +85,7 @@ async function executeFlowAsync(
 
       console.error("❌ Flow execution failed:", result.error);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Async execution error:", error);
 
     // Update execution status to failed
@@ -202,12 +202,13 @@ export async function POST(
       flow_id: flow.$id,
       flow_name: flow.name,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Webhook processing failed:", error);
     return NextResponse.json(
       {
         error: "Failed to process webhook",
-        message: error.message,
+        message: errorMessage,
       },
       { status: 500 }
     );
@@ -243,8 +244,9 @@ export async function GET(
       status: flow.status,
       webhook_url: flow.webhook_url,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to get webhook info:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

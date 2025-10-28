@@ -14,8 +14,10 @@ export async function GET(
     );
 
     return NextResponse.json(event);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("Failed to fetch event:", error);
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ error: errorMessage }, { status: 404 });
   }
 }

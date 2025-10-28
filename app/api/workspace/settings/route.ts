@@ -51,12 +51,13 @@ export async function GET(request: Request) {
         lastUsed: key.last_used_at,
       })),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching workspace settings:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch workspace settings",
+        error: errorMessage || "Failed to fetch workspace settings",
       },
       { status: 500 }
     );
@@ -94,12 +95,13 @@ export async function PATCH(request: Request) {
         settings: workspace.settings,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error updating workspace:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to update workspace",
+        error: errorMessage || "Failed to update workspace",
       },
       { status: 500 }
     );

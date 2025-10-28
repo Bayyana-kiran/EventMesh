@@ -35,10 +35,11 @@ export function EmailVerificationBanner() {
         title: "Verification email sent",
         description: `We've sent a verification link to ${user.email}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Failed to send verification email",
-        description: error.message || "Please try again later",
+        description: errorMessage || "Please try again later",
         variant: "destructive",
       });
     } finally {

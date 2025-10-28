@@ -75,7 +75,7 @@ export interface Event extends Models.Document {
   flow_id: string;
   source: string;
   event_type: string;
-  payload: any;
+  payload: Record<string, unknown>;
   headers: Record<string, string>;
   received_at: string;
   status: EventStatus;
@@ -100,8 +100,8 @@ export interface Execution extends Models.Document {
 export interface NodeExecution {
   node_id: string;
   status: ExecutionStatus;
-  input: any;
-  output: any;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
   error?: string;
   duration_ms: number;
 }
@@ -113,7 +113,7 @@ export interface Destination extends Models.Document {
   config: DestinationConfigDetails;
   auth?: {
     type: "bearer" | "oauth" | "apikey";
-    credentials: any;
+    credentials: Record<string, unknown>;
   };
   created_at: string;
 }
@@ -122,7 +122,7 @@ export interface DestinationConfigDetails {
   webhook_url?: string;
   channel?: string;
   email?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ApiKey extends Models.Document {
@@ -187,20 +187,20 @@ export interface WebhookPayload {
   flow_id: string;
   source: string;
   event_type: string;
-  payload: any;
+  payload: Record<string, unknown>;
   headers: Record<string, string>;
 }
 
 export interface AITransformRequest {
-  payload: any;
+  payload: Record<string, unknown>;
   source?: string;
   instructions?: string;
 }
 
 export interface AITransformResponse {
-  schema: any;
+  schema: Record<string, unknown>;
   suggestions: TransformationSuggestion[];
-  transformed_payload?: any;
+  transformed_payload?: Record<string, unknown>;
   code?: string;
 }
 

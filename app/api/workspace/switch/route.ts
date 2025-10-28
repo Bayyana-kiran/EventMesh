@@ -31,10 +31,11 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("POST /api/workspace/switch error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to switch workspace" },
+      { success: false, error: errorMessage || "Failed to switch workspace" },
       { status: 500 }
     );
   }

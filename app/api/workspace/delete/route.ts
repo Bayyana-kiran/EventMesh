@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
       console.log(`✅ Deleted ${flowsResponse.documents.length} flows`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting flows:", error);
       // Continue even if flows deletion fails
     }
@@ -107,7 +107,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
       console.log(`✅ Deleted ${eventsResponse.documents.length} events`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting events:", error);
       // Continue even if events deletion fails
     }
@@ -134,7 +134,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
       console.log(`✅ Deleted ${workspaceExecutions.length} executions`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting executions:", error);
       // Continue even if executions deletion fails
     }
@@ -158,7 +158,7 @@ export async function DELETE(request: NextRequest) {
       console.log(
         `✅ Deleted ${destinationsResponse.documents.length} destinations`
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting destinations:", error);
       // Continue even if destinations deletion fails
     }
@@ -180,7 +180,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
       console.log(`✅ Deleted ${apiKeysResponse.documents.length} API keys`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting API keys:", error);
       // Continue even if API keys deletion fails
     }
@@ -204,7 +204,7 @@ export async function DELETE(request: NextRequest) {
       console.log(
         `✅ Deleted ${analyticsResponse.documents.length} analytics records`
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting analytics:", error);
       // Continue even if analytics deletion fails
     }
@@ -227,7 +227,7 @@ export async function DELETE(request: NextRequest) {
         name: workspace.name,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ DELETE /api/workspace/delete error:", error);
 
     // Provide more helpful error messages

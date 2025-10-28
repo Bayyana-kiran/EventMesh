@@ -9,7 +9,7 @@ interface FlowStore {
   setEdges: (edges: Edge[]) => void;
   setSelectedNode: (node: Node | null) => void;
   addNode: (node: Node) => void;
-  updateNode: (id: string, data: any) => void;
+  updateNode: (id: string, data: Record<string, unknown>) => void;
   deleteNode: (id: string) => void;
   addEdge: (edge: Edge) => void;
   deleteEdge: (id: string) => void;

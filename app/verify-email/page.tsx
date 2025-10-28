@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { account } from "@/lib/appwrite/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function VerifyEmailPage() {
@@ -21,6 +21,43 @@ export default function VerifyEmailPage() {
     "loading"
   );
   const [message, setMessage] = useState("");
+
+  const verifyEmail = useCallback(
+    async (userId: string, secret: string) => {
+      try {
+        await account.updateVerification(userId, secret);
+        setStatus("success");
+        setMessage(
+          "Your email has been verified successfully! You can now access all features."
+        );
+
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 3000);
+      } catch (error: unknown) {
+        console.error("Verification failed:", error);
+        setStatus("error");
+
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes("expired")) {
+          setMessage(
+            "This verification link has expired. Please request a new one from your dashboard."
+          );
+        } else if (errorMessage.includes("Invalid")) {
+          setMessage(
+            "This verification link is invalid. Please check your email or request a new verification link."
+          );
+        } else {
+          setMessage(
+            "Failed to verify your email. Please try again or contact support if the problem persists."
+          );
+        }
+      }
+    },
+    [router]
+  );
 
   useEffect(() => {
     const userId = searchParams.get("userId");
@@ -35,39 +72,7 @@ export default function VerifyEmailPage() {
     }
 
     verifyEmail(userId, secret);
-  }, [searchParams]);
-
-  const verifyEmail = async (userId: string, secret: string) => {
-    try {
-      await account.updateVerification(userId, secret);
-      setStatus("success");
-      setMessage(
-        "Your email has been verified successfully! You can now access all features."
-      );
-
-      // Redirect to dashboard after 3 seconds
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 3000);
-    } catch (error: any) {
-      console.error("Verification failed:", error);
-      setStatus("error");
-
-      if (error.message?.includes("expired")) {
-        setMessage(
-          "This verification link has expired. Please request a new one from your dashboard."
-        );
-      } else if (error.message?.includes("Invalid")) {
-        setMessage(
-          "This verification link is invalid. Please check your email or request a new verification link."
-        );
-      } else {
-        setMessage(
-          "Failed to verify your email. Please try again or contact support if the problem persists."
-        );
-      }
-    }
-  };
+  }, [searchParams, verifyEmail]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-4">

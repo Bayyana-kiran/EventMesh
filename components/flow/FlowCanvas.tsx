@@ -115,10 +115,11 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
         title: "Flow saved",
         description: "Your flow has been saved successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Save failed",
-        description: error.message || "Failed to save flow",
+        description: errorMessage || "Failed to save flow",
         variant: "destructive",
       });
     } finally {
@@ -148,10 +149,11 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
 
       // Refresh the page to show updated status
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Status update failed",
-        description: error.message || "Failed to update flow status",
+        description: errorMessage || "Failed to update flow status",
         variant: "destructive",
       });
     } finally {

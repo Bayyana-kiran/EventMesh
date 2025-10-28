@@ -171,12 +171,13 @@ export async function GET(request: Request) {
       recentFlows,
       recentEvents,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching dashboard stats:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch stats",
+        error: errorMessage || "Failed to fetch stats",
       },
       { status: 500 }
     );

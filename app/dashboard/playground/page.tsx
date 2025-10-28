@@ -140,13 +140,14 @@ export default function PlaygroundPage() {
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       const endTime = Date.now();
       setExecutionTime(endTime - startTime);
       setResponse({
         status: 0,
         statusText: "Network Error",
-        data: { error: error.message },
+        data: { error: errorMessage },
       });
       toast({
         title: "Error",

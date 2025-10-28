@@ -112,12 +112,13 @@ export async function GET(request: Request) {
       },
       destinations,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching destinations:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch destinations",
+        error: errorMessage || "Failed to fetch destinations",
       },
       { status: 500 }
     );

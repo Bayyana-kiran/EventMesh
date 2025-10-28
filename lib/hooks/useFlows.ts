@@ -41,8 +41,8 @@ export function useCreateFlow() {
       name: string;
       description?: string;
       workspaceId: string;
-      nodes?: any[];
-      edges?: any[];
+      nodes?: Record<string, unknown>[];
+      edges?: Record<string, unknown>[];
     }) => {
       const response = await fetch("/api/flows", {
         method: "POST",

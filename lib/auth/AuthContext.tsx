@@ -276,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Log the user in
       await login(email, password);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Signup failed:", error);
       throw error;
     }
@@ -293,7 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           typeof window !== "undefined" ? window.location.origin : ""
         }/verify-email`
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to resend verification:", error);
       throw error;
     }

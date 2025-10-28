@@ -39,10 +39,11 @@ export default function FlowBuilderPage() {
         }
         const data = await response.json();
         setFlow(data);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "An error occurred";
         toast({
           title: "Error",
-          description: error.message || "Failed to load flow",
+          description: errorMessage || "Failed to load flow",
           variant: "destructive",
         });
         router.push("/dashboard/flows");
@@ -68,7 +69,7 @@ export default function FlowBuilderPage() {
         }
         const data = await response.json();
         setExecutions(data.executions || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Failed to load executions:", error);
       } finally {
         setExecutionsLoading(false);

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export type DestinationNodeData = {
   label: string;
   type: "slack" | "discord" | "email" | "webhook";
-  config?: any;
+  config?: Record<string, unknown>;
 };
 
 const iconMap = {

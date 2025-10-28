@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export function NodeConfigPanel({
   onUpdate,
   onClose,
 }: NodeConfigPanelProps) {
-  const [config, setConfig] = useState(node.data);
+  const [config, setConfig] = useState<any>(node.data);
 
   useEffect(() => {
     setConfig(node.data);

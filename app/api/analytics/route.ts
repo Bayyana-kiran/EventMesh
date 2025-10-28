@@ -173,12 +173,13 @@ export async function GET(request: Request) {
       flowPerformance,
       responseTimeDistribution: distribution,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching analytics:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch analytics",
+        error: errorMessage || "Failed to fetch analytics",
       },
       { status: 500 }
     );

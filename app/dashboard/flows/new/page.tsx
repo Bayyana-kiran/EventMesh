@@ -57,10 +57,11 @@ export default function NewFlowPage() {
       });
 
       router.push(`/dashboard/flows/${flow.$id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       toast({
         title: "Failed to create flow",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

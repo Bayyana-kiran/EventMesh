@@ -6,7 +6,7 @@
 interface FlowNode {
   id: string;
   type: "source" | "transform" | "destination";
-  data: any;
+  data: Record<string, unknown>;
   position: { x: number; y: number };
 }
 
@@ -20,8 +20,8 @@ interface ExecutionContext {
   executionId: string;
   flowId: string;
   eventId: string;
-  inputData: any;
-  currentData: any;
+  inputData: Record<string, unknown>;
+  currentData: Record<string, unknown>;
   steps: ExecutionStep[];
 }
 
@@ -31,8 +31,8 @@ interface ExecutionStep {
   status: "pending" | "running" | "completed" | "failed";
   startedAt: string;
   completedAt?: string;
-  input?: any;
-  output?: any;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
   error?: string;
 }
 
@@ -47,7 +47,7 @@ export class FlowExecutionEngine {
     executionId: string,
     flowId: string,
     eventId: string,
-    inputData: any
+    inputData: Record<string, unknown>
   ) {
     this.nodes = nodes;
     this.edges = edges;
@@ -66,7 +66,7 @@ export class FlowExecutionEngine {
    */
   async execute(): Promise<{
     success: boolean;
-    output: any;
+    output: Record<string, unknown> | null;
     steps: ExecutionStep[];
     error?: string;
   }> {
@@ -94,14 +94,16 @@ export class FlowExecutionEngine {
         output: this.context.currentData,
         steps: this.context.steps,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ Flow execution failed:", error);
 
       return {
         success: false,
         output: null,
         steps: this.context.steps,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -154,7 +156,9 @@ export class FlowExecutionEngine {
             node,
             this.context.currentData
           );
-          this.context.currentData = step.output;
+          if (step.output) {
+            this.context.currentData = step.output;
+          }
           break;
 
         case "destination":
@@ -173,12 +177,14 @@ export class FlowExecutionEngine {
       step.completedAt = new Date().toISOString();
 
       console.log(`✅ Node ${node.id} completed`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error(`❌ Node ${node.id} failed:`, error);
 
       step.status = "failed";
       step.completedAt = new Date().toISOString();
-      step.error = error.message;
+      step.error = errorMessage;
 
       throw error;
     }
@@ -187,7 +193,10 @@ export class FlowExecutionEngine {
   /**
    * Execute a transform node
    */
-  private async executeTransform(node: FlowNode, data: any): Promise<any> {
+  private async executeTransform(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     const transformType = node.data?.type || "javascript";
 
     console.log(`🔄 Transform type: ${transformType}`);
@@ -205,10 +214,13 @@ export class FlowExecutionEngine {
   /**
    * Execute JavaScript transformation
    */
-  private executeJavaScriptTransform(node: FlowNode, data: any): any {
+  private executeJavaScriptTransform(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     try {
       // Get the JavaScript code from node configuration
-      const code = node.data?.code || "return data;";
+      const code = (node.data?.code as string) || "return data;";
 
       console.log("📝 Executing JavaScript:", code.substring(0, 100));
 
@@ -220,19 +232,24 @@ export class FlowExecutionEngine {
 
       console.log("✅ JavaScript executed successfully");
 
-      return result;
-    } catch (error: any) {
+      return result as Record<string, unknown>;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ JavaScript execution failed:", error);
-      throw new Error(`JavaScript transform failed: ${error.message}`);
+      throw new Error(`JavaScript transform failed: ${errorMessage}`);
     }
   }
 
   /**
    * Execute AI transformation using Gemini
    */
-  private async executeAITransform(node: FlowNode, data: any): Promise<any> {
+  private async executeAITransform(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
-      const prompt = node.data?.prompt || "Transform this data";
+      const prompt = (node.data?.prompt as string) || "Transform this data";
       const apiKey = process.env.GEMINI_API_KEY;
 
       if (!apiKey) {
@@ -272,8 +289,11 @@ export class FlowExecutionEngine {
         throw new Error(`Gemini API error: ${response.statusText}`);
       }
 
-      const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      const result = (await response.json()) as Record<string, unknown>;
+      const candidates = result.candidates as Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+      const text = candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!text) {
         throw new Error("No response from Gemini");
@@ -281,21 +301,26 @@ export class FlowExecutionEngine {
 
       // Try to parse JSON from response
       try {
-        return JSON.parse(text);
+        return JSON.parse(text) as Record<string, unknown>;
       } catch {
         // If not JSON, return as text
         return { aiResponse: text, originalData: data };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ AI transform failed:", error);
-      throw new Error(`AI transform failed: ${error.message}`);
+      throw new Error(`AI transform failed: ${errorMessage}`);
     }
   }
 
   /**
    * Execute a destination node
    */
-  private async executeDestination(node: FlowNode, data: any): Promise<any> {
+  private async executeDestination(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     const destinationType = node.data?.type || "webhook";
 
     console.log(`📤 Destination type: ${destinationType}`);
@@ -315,9 +340,12 @@ export class FlowExecutionEngine {
   /**
    * Send data to a webhook
    */
-  private async sendToWebhook(node: FlowNode, data: any): Promise<any> {
+  private async sendToWebhook(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
-      const webhookUrl = node.data?.webhookUrl || node.data?.url;
+      const webhookUrl = (node.data?.webhookUrl || node.data?.url) as string;
 
       if (!webhookUrl) {
         throw new Error("No webhook URL configured");
@@ -344,18 +372,23 @@ export class FlowExecutionEngine {
         status: response.status,
         response: responseText,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ Webhook delivery failed:", error);
-      throw new Error(`Webhook delivery failed: ${error.message}`);
+      throw new Error(`Webhook delivery failed: ${errorMessage}`);
     }
   }
 
   /**
    * Send data to Slack
    */
-  private async sendToSlack(node: FlowNode, data: any): Promise<any> {
+  private async sendToSlack(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
-      const webhookUrl = node.data?.slackWebhook;
+      const webhookUrl = node.data?.slackWebhook as string;
 
       if (!webhookUrl) {
         throw new Error("No Slack webhook URL configured");
@@ -364,7 +397,7 @@ export class FlowExecutionEngine {
       console.log("📱 Sending to Slack");
 
       const message = {
-        text: node.data?.message || JSON.stringify(data, null, 2),
+        text: (node.data?.message as string) || JSON.stringify(data, null, 2),
         blocks: [
           {
             type: "section",
@@ -393,18 +426,23 @@ export class FlowExecutionEngine {
       console.log("✅ Slack delivery successful");
 
       return { success: true, channel: "slack" };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ Slack delivery failed:", error);
-      throw new Error(`Slack delivery failed: ${error.message}`);
+      throw new Error(`Slack delivery failed: ${errorMessage}`);
     }
   }
 
   /**
    * Send data to Discord
    */
-  private async sendToDiscord(node: FlowNode, data: any): Promise<any> {
+  private async sendToDiscord(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
-      const webhookUrl = node.data?.discordWebhook;
+      const webhookUrl = node.data?.discordWebhook as string;
 
       if (!webhookUrl) {
         throw new Error("No Discord webhook URL configured");
@@ -413,7 +451,7 @@ export class FlowExecutionEngine {
       console.log("💬 Sending to Discord");
 
       const message = {
-        content: node.data?.message || "EventMesh Notification",
+        content: (node.data?.message as string) || "EventMesh Notification",
         embeds: [
           {
             title: "Flow Execution",
@@ -437,9 +475,11 @@ export class FlowExecutionEngine {
       console.log("✅ Discord delivery successful");
 
       return { success: true, channel: "discord" };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("❌ Discord delivery failed:", error);
-      throw new Error(`Discord delivery failed: ${error.message}`);
+      throw new Error(`Discord delivery failed: ${errorMessage}`);
     }
   }
 }

@@ -36,10 +36,12 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You've successfully signed in.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Invalid email or password";
       toast({
         title: "Login failed",
-        description: error.message || "Invalid email or password",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -55,10 +57,14 @@ export default function LoginPage() {
         `${window.location.origin}/dashboard`, // Success redirect
         `${window.location.origin}/login` // Failure redirect
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Could not authenticate with GitHub";
       toast({
         title: "GitHub login failed",
-        description: error.message || "Could not authenticate with GitHub",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -165,7 +171,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
               </span>
               <Link
                 href="/signup"

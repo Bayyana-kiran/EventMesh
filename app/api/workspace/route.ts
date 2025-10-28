@@ -30,10 +30,11 @@ export async function GET(request: NextRequest) {
       workspaces,
       current: workspaces[0] || null,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("GET /api/workspace error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch workspaces" },
+      { success: false, error: errorMessage || "Failed to fetch workspaces" },
       { status: 500 }
     );
   }
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       workspace,
       message: "Workspace created successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/workspace error:", error);
 
     // Provide more helpful error messages
