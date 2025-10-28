@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
+import { getAuthContext, verifyResourceAccess } from "@/lib/auth/server-auth";
 
 // GET /api/flows/[id] - Get a specific flow
 export async function GET(
@@ -8,7 +9,19 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authContext = await getAuthContext();
+
+    if (!authContext) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await context.params;
+
+    // Verify user has access to this flow
+    await verifyResourceAccess(COLLECTION_IDS.FLOWS, id, authContext.user.$id);
 
     const flow = await databases.getDocument(
       APPWRITE_DATABASE_ID,
@@ -19,6 +32,9 @@ export async function GET(
     return NextResponse.json(flow);
   } catch (error: any) {
     console.error("Failed to fetch flow:", error);
+    if (error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
 }
@@ -29,9 +45,22 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authContext = await getAuthContext();
+
+    if (!authContext) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await context.params;
+
+    // Verify user has access to this flow
+    await verifyResourceAccess(COLLECTION_IDS.FLOWS, id, authContext.user.$id);
+
     const body = await request.json();
-    const { name, description, status, nodes, edges, workspace_id } = body;
+    const { name, description, status, nodes, edges } = body;
 
     const updateData: any = {
       updated_at: new Date().toISOString(),
@@ -42,7 +71,7 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status;
     if (nodes !== undefined) updateData.nodes = nodes;
     if (edges !== undefined) updateData.edges = edges;
-    if (workspace_id !== undefined) updateData.workspace_id = workspace_id;
+    // Don't allow changing workspace_id - that would be a security issue!
 
     const flow = await databases.updateDocument(
       APPWRITE_DATABASE_ID,
@@ -54,6 +83,9 @@ export async function PATCH(
     return NextResponse.json(flow);
   } catch (error: any) {
     console.error("Failed to update flow:", error);
+    if (error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -64,7 +96,19 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authContext = await getAuthContext();
+
+    if (!authContext) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await context.params;
+
+    // Verify user has access to this flow
+    await verifyResourceAccess(COLLECTION_IDS.FLOWS, id, authContext.user.$id);
 
     await databases.deleteDocument(
       APPWRITE_DATABASE_ID,
@@ -75,6 +119,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Failed to delete flow:", error);
+    if (error.message.includes("Unauthorized")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

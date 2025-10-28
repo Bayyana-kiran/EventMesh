@@ -24,10 +24,10 @@ export async function createWorkspace(name: string, ownerId: string) {
       name,
       owner_id: ownerId,
       created_at: new Date().toISOString(),
-      settings: {
+      settings: JSON.stringify({
         timezone: "UTC",
         retention_days: 30,
-      },
+      }),
     }
   );
 }

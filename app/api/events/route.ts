@@ -1,24 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
+import { getAuthContext } from "@/lib/auth/server-auth";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 const EVENTS_COLLECTION_ID =
   process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_EVENTS!;
 const FLOWS_COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!;
 
-// GET /api/events - List events
+// GET /api/events - List events for authenticated user
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate user and get their workspace
+    const authContext = await getAuthContext();
+
+    if (!authContext) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
+    const { workspace } = authContext;
     const searchParams = request.nextUrl.searchParams;
     const flowId = searchParams.get("flowId");
     const status = searchParams.get("status");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    console.log("📋 Fetching events with filters:", { flowId, status, limit });
+    console.log("📋 Fetching events for workspace:", workspace.$id, {
+      flowId,
+      status,
+      limit,
+    });
 
-    // Build query
-    const queries = [Query.orderDesc("$createdAt"), Query.limit(limit)];
+    // Build query - ALWAYS filter by workspace
+    const queries = [
+      Query.equal("workspace_id", workspace.$id),
+      Query.orderDesc("$createdAt"),
+      Query.limit(limit),
+    ];
 
     if (flowId) {
       queries.push(Query.equal("flow_id", flowId));
