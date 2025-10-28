@@ -29,7 +29,26 @@ export async function DELETE(request: NextRequest) {
 
     const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
-    // Step 1: Verify workspace ownership
+    // Step 1: Check if this is the user's last workspace
+    console.log(`🔍 Checking user's workspaces count...`);
+    const userWorkspaces = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_IDS.WORKSPACES,
+      [Query.equal("owner_id", userId)]
+    );
+
+    if (userWorkspaces.total <= 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Cannot delete your only workspace. Please create another workspace first.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Step 2: Verify workspace ownership
     console.log(`🔍 Verifying workspace ownership: ${workspaceId}`);
     const workspace = await databases.getDocument(
       DATABASE_ID,
@@ -49,7 +68,7 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`✅ Workspace verified: ${workspace.name}`);
 
-    // Step 2: Delete all flows in the workspace
+    // Step 3: Delete all flows in the workspace
     console.log("🗑️  Deleting flows...");
     try {
       const flowsResponse = await databases.listDocuments(
@@ -71,7 +90,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if flows deletion fails
     }
 
-    // Step 3: Delete all events in the workspace
+    // Step 4: Delete all events in the workspace
     console.log("🗑️  Deleting events...");
     try {
       const eventsResponse = await databases.listDocuments(
@@ -93,7 +112,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if events deletion fails
     }
 
-    // Step 4: Delete all executions in the workspace
+    // Step 5: Delete all executions in the workspace
     console.log("🗑️  Deleting executions...");
     try {
       const executionsResponse = await databases.listDocuments(
@@ -120,7 +139,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if executions deletion fails
     }
 
-    // Step 5: Delete all destinations in the workspace
+    // Step 6: Delete all destinations in the workspace
     console.log("🗑️  Deleting destinations...");
     try {
       const destinationsResponse = await databases.listDocuments(
@@ -144,7 +163,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if destinations deletion fails
     }
 
-    // Step 6: Delete all API keys in the workspace
+    // Step 7: Delete all API keys in the workspace
     console.log("🗑️  Deleting API keys...");
     try {
       const apiKeysResponse = await databases.listDocuments(
@@ -166,7 +185,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if API keys deletion fails
     }
 
-    // Step 7: Delete all analytics data in the workspace
+    // Step 8: Delete all analytics data in the workspace
     console.log("🗑️  Deleting analytics...");
     try {
       const analyticsResponse = await databases.listDocuments(
@@ -190,7 +209,7 @@ export async function DELETE(request: NextRequest) {
       // Continue even if analytics deletion fails
     }
 
-    // Step 8: Finally, delete the workspace itself
+    // Step 9: Finally, delete the workspace itself
     console.log("🗑️  Deleting workspace...");
     await databases.deleteDocument(
       DATABASE_ID,

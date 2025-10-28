@@ -295,10 +295,17 @@ export default function SettingsPage() {
                 events, executions, destinations, API keys, and analytics. This
                 action cannot be undone.
               </p>
+              {workspaces.length <= 1 && (
+                <p className="text-sm text-amber-600 dark:text-amber-500 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  You cannot delete your only workspace. Create another
+                  workspace first.
+                </p>
+              )}
               <Button
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
-                disabled={!workspace}
+                disabled={!workspace || workspaces.length <= 1}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Workspace
