@@ -71,7 +71,7 @@ export default function HomePage() {
       <section className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 overflow-hidden">
         {/* Grid Background for entire hero section */}
         <div
-          className="absolute inset-0 opacity-[0.08]"
+          className="absolute inset-0 opacity-[0.15]"
           style={{
             backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px),
                            linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,

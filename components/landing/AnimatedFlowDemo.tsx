@@ -83,10 +83,10 @@ export function AnimatedFlowDemo() {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center h-full p-6 md:p-12 lg:p-16">
-        <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-6xl gap-8 md:gap-16 lg:gap-24">
+      <div className="relative z-10 flex items-center justify-center h-full p-4 md:p-8 lg:p-12">
+        <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-6xl gap-6 md:gap-12 lg:gap-20">
           {/* Source Node */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             <div
               className={`relative group transition-all duration-300 ${
                 activeNode === 0 ? "scale-110" : ""
@@ -99,18 +99,18 @@ export function AnimatedFlowDemo() {
                     : "bg-primary/20 opacity-40"
                 }`}
               />
-              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/90 p-6 md:p-8 lg:p-10 rounded-2xl shadow-2xl border-2 border-primary/50">
-                <Webhook className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-primary-foreground" />
+              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/90 p-4 md:p-6 lg:p-7 rounded-2xl shadow-2xl border-2 border-primary/50">
+                <Webhook className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-primary-foreground" />
               </div>
               {activeNode === 0 && (
                 <div className="absolute -inset-3 border-2 border-primary rounded-2xl animate-ping" />
               )}
             </div>
             <div className="text-center">
-              <p className="text-foreground font-bold text-lg md:text-xl lg:text-2xl">
+              <p className="text-foreground font-bold text-base md:text-lg lg:text-xl">
                 Webhook
               </p>
-              <p className="text-muted-foreground text-sm md:text-base">
+              <p className="text-muted-foreground text-xs md:text-sm">
                 Event Source
               </p>
             </div>
@@ -138,7 +138,7 @@ export function AnimatedFlowDemo() {
           </div>
 
           {/* Transform Node */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             <div
               className={`relative group transition-all duration-300 ${
                 activeNode === 1 ? "scale-110" : ""
@@ -151,11 +151,11 @@ export function AnimatedFlowDemo() {
                     : "bg-secondary/20 opacity-40"
                 }`}
               />
-              <div className="relative bg-gradient-to-br from-secondary via-secondary to-secondary/90 p-6 md:p-8 lg:p-10 rounded-2xl shadow-2xl border-2 border-secondary/50">
+              <div className="relative bg-gradient-to-br from-secondary via-secondary to-secondary/90 p-4 md:p-6 lg:p-7 rounded-2xl shadow-2xl border-2 border-secondary/50">
                 <div className="relative">
-                  <Zap className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-secondary-foreground" />
+                  <Zap className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-secondary-foreground" />
                   {activeNode === 1 && (
-                    <Sparkles className="absolute -top-2 -right-2 w-6 h-6 md:w-8 md:h-8 text-accent animate-spin" />
+                    <Sparkles className="absolute -top-2 -right-2 w-5 h-5 md:w-6 md:h-6 text-accent animate-spin" />
                   )}
                 </div>
               </div>
@@ -164,10 +164,10 @@ export function AnimatedFlowDemo() {
               )}
             </div>
             <div className="text-center">
-              <p className="text-foreground font-bold text-lg md:text-xl lg:text-2xl">
+              <p className="text-foreground font-bold text-base md:text-lg lg:text-xl">
                 AI Transform
               </p>
-              <p className="text-muted-foreground text-sm md:text-base">
+              <p className="text-muted-foreground text-xs md:text-sm">
                 Process & Enrich
               </p>
             </div>
@@ -195,7 +195,7 @@ export function AnimatedFlowDemo() {
           </div>
 
           {/* Destination Node */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             <div
               className={`relative group transition-all duration-300 ${
                 activeNode === 2 ? "scale-110" : ""
@@ -208,21 +208,21 @@ export function AnimatedFlowDemo() {
                     : "bg-primary/20 opacity-40"
                 }`}
               />
-              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/90 p-6 md:p-8 lg:p-10 rounded-2xl shadow-2xl border-2 border-primary/50">
-                <Send className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-primary-foreground" />
+              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/90 p-4 md:p-6 lg:p-7 rounded-2xl shadow-2xl border-2 border-primary/50">
+                <Send className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-primary-foreground" />
               </div>
               {activeNode === 2 && (
                 <>
                   <div className="absolute -inset-3 border-2 border-primary rounded-2xl animate-ping" />
-                  <CheckCircle2 className="absolute -top-3 -right-3 w-8 h-8 md:w-10 md:h-10 text-primary animate-bounce" />
+                  <CheckCircle2 className="absolute -top-3 -right-3 w-7 h-7 md:w-8 md:h-8 text-primary animate-bounce" />
                 </>
               )}
             </div>
             <div className="text-center">
-              <p className="text-foreground font-bold text-lg md:text-xl lg:text-2xl">
+              <p className="text-foreground font-bold text-base md:text-lg lg:text-xl">
                 Destination
               </p>
-              <p className="text-muted-foreground text-sm md:text-base">
+              <p className="text-muted-foreground text-xs md:text-sm">
                 Slack, Email, etc.
               </p>
             </div>
