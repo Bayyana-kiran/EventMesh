@@ -16,8 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
-  Bell,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -461,17 +459,7 @@ export default function DashboardLayout({
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search flows, events..."
-                className="w-full h-9 pl-9 pr-4 text-sm bg-muted/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
-              />
-            </div>
-          </div>
+          <div className="flex-1" />
         </header>
 
         {/* Email Verification Banner */}
