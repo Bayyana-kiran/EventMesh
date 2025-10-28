@@ -5,7 +5,13 @@
  * Run with: node scripts/setup-appwrite.js
  */
 
+require("dotenv").config({ path: ".env.local" });
 const { Client, Databases, ID } = require("node-appwrite");
+
+console.log(
+  "Using Appwrite Project:",
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID
+);
 
 const client = new Client()
   .setEndpoint(

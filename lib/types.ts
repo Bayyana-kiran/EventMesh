@@ -19,10 +19,7 @@ export interface Workspace extends Models.Document {
   name: string;
   owner_id: string;
   created_at: string;
-  settings: {
-    timezone: string;
-    retention_days: number;
-  };
+  settings: string; // JSON string of { timezone: string, retention_days: number }
 }
 
 export interface Flow extends Models.Document {

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
+import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
 
 // GET /api/flows/[id] - Get a specific flow
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
+
     const flow = await databases.getDocument(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!,
-      params.id
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.FLOWS,
+      id
     );
 
     return NextResponse.json(flow);
@@ -23,23 +26,28 @@ export async function GET(
 // PATCH /api/flows/[id] - Update a flow
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const body = await request.json();
-    const { name, description, status, nodes, edges } = body;
+    const { name, description, status, nodes, edges, workspace_id } = body;
 
-    const updateData: any = {};
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (status !== undefined) updateData.status = status;
-    if (nodes !== undefined) updateData.nodes = JSON.stringify(nodes);
-    if (edges !== undefined) updateData.edges = JSON.stringify(edges);
+    if (nodes !== undefined) updateData.nodes = nodes;
+    if (edges !== undefined) updateData.edges = edges;
+    if (workspace_id !== undefined) updateData.workspace_id = workspace_id;
 
     const flow = await databases.updateDocument(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!,
-      params.id,
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.FLOWS,
+      id,
       updateData
     );
 
@@ -53,13 +61,15 @@ export async function PATCH(
 // DELETE /api/flows/[id] - Delete a flow
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
+
     await databases.deleteDocument(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!,
-      params.id
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.FLOWS,
+      id
     );
 
     return NextResponse.json({ success: true });

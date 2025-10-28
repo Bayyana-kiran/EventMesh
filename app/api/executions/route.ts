@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
+import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
 
 // GET /api/executions - List executions
 export async function GET(request: NextRequest) {
@@ -8,27 +9,44 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const flowId = searchParams.get("flowId");
     const eventId = searchParams.get("eventId");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = parseInt(searchParams.get("limit") || "10");
 
-    const queries = [];
+    console.log("📋 Fetching executions with filters:", {
+      flowId,
+      eventId,
+      limit,
+    });
+
+    const queries = [Query.orderDesc("$createdAt"), Query.limit(limit)];
+
     if (flowId) {
-      queries.push(Query.equal("flowId", flowId));
+      queries.push(Query.equal("flow_id", flowId));
     }
     if (eventId) {
-      queries.push(Query.equal("eventId", eventId));
+      queries.push(Query.equal("event_id", eventId));
     }
-    queries.push(Query.limit(limit));
-    queries.push(Query.orderDesc("startedAt"));
 
-    const executions = await databases.listDocuments(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_EXECUTIONS!,
+    const executionsResponse = await databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.EXECUTIONS,
       queries
     );
 
-    return NextResponse.json(executions);
+    console.log(`✅ Found ${executionsResponse.documents.length} executions`);
+
+    return NextResponse.json({
+      success: true,
+      executions: executionsResponse.documents,
+      total: executionsResponse.total,
+    });
   } catch (error: any) {
-    console.error("Failed to fetch executions:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("❌ Failed to fetch executions:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+      },
+      { status: 500 }
+    );
   }
 }

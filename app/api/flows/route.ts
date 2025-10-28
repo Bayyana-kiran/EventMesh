@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { ID, Query } from "node-appwrite";
+import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
 
 // GET /api/flows - List all flows
 export async function GET(request: NextRequest) {
@@ -16,9 +17,9 @@ export async function GET(request: NextRequest) {
     }
 
     const flows = await databases.listDocuments(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!,
-      [Query.equal("workspaceId", workspaceId)]
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.FLOWS,
+      [Query.equal("workspace_id", workspaceId), Query.orderDesc("$createdAt")]
     );
 
     return NextResponse.json(flows);
@@ -41,23 +42,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate webhook ID
-    const webhookId = `wh_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    // Generate unique webhook URL
+    const webhookId = ID.unique();
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook/${webhookId}`;
 
     const flow = await databases.createDocument(
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
-      process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS!,
+      APPWRITE_DATABASE_ID,
+      COLLECTION_IDS.FLOWS,
       ID.unique(),
       {
         name,
         description: description || "",
-        workspaceId,
-        webhookId,
-        status: "active",
-        nodes: nodes ? JSON.stringify(nodes) : "[]",
-        edges: edges ? JSON.stringify(edges) : "[]",
+        workspace_id: workspaceId,
+        status: "draft",
+        nodes: nodes ? JSON.stringify(nodes) : JSON.stringify([]),
+        edges: edges ? JSON.stringify(edges) : JSON.stringify([]),
+        webhook_url: webhookUrl,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
     );
 

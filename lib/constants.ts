@@ -8,7 +8,7 @@ export const APPWRITE_ENDPOINT =
 export const APPWRITE_PROJECT_ID =
   process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
 export const APPWRITE_DATABASE_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "eventmesh";
+  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "eventmesh-db";
 
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 

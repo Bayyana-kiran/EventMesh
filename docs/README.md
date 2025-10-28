@@ -1,29 +1,42 @@
 # EventMesh Documentation
 
-Welcome to the EventMesh documentation!
+Welcome to the EventMesh documentation! This comprehensive guide will help you get started and master the platform.
 
-## Table of Contents
+## 📚 Documentation Index
 
-1. [Getting Started](./getting-started.md)
-2. [API Reference](./api-reference.md)
-3. [Flow Builder Guide](./flow-builder.md)
-4. [Webhooks](./webhooks.md)
-5. [Transformations](./transformations.md)
-6. [Destinations](./destinations.md)
-7. [Analytics](./analytics.md)
-8. [Security](./security.md)
-9. [Troubleshooting](./troubleshooting.md)
-10. [FAQ](./faq.md)
+### Getting Started
 
-## Quick Links
+- **[Quick Start Guide](./QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Manual Setup Guide](./MANUAL_SETUP.md)** - Detailed step-by-step setup
+- **[Getting Started](./getting-started.md)** - Comprehensive introduction
 
-- [Installation Guide](../QUICKSTART.md)
-- [Architecture Overview](../ARCHITECTURE.md)
-- [Deployment Guide](../DEPLOYMENT.md)
-- [GitHub Repository](https://github.com/yourusername/eventmesh)
+### Core Guides
 
-## Need Help?
+- **[Flow Builder Guide](./flow-builder.md)** - Build visual event workflows
+- **[Webhooks](./webhooks.md)** - Working with webhooks
+- **[Transformations](./transformations.md)** - Transform event data
+- **[API Reference](./api-reference.md)** - Complete API documentation
 
-- Check our [Troubleshooting Guide](./troubleshooting.md)
-- Join our [Discord Community](https://discord.gg/eventmesh)
-- Email: support@eventmesh.dev
+### Architecture & Deployment
+
+- **[Architecture Overview](./ARCHITECTURE.md)** - System design and architecture
+- **[Deployment Guide](./DEPLOYMENT.md)** - Deploy to production
+- **[Codebase Structure](./CODEBASE_STRUCTURE.md)** - Understanding the code organization
+- **[Testing Guide](./TESTING_GUIDE.md)** - Testing best practices
+
+### Operations
+
+- **[Production Updates](./PRODUCTION_UPDATES.md)** - Managing production deployments
+- **[Roadmap](./roadmap.md)** - Future features and development plans
+
+## 🚀 Quick Links
+
+- [GitHub Repository](https://github.com/Bayyana-kiran/eventmesh)
+- [Live Demo](#)
+- [Discord Community](#)
+
+## 💡 Need Help?
+
+- Check the documentation sections above
+- Join our [Discord Community](#)
+- Create an issue on [GitHub](https://github.com/Bayyana-kiran/eventmesh/issues)

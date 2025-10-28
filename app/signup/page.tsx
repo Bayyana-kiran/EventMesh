@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { useToast } from "@/lib/hooks/use-toast";
 
 export default function SignUpPage() {
-  const router = useRouter();
+  const { signup } = useAuth();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,10 +28,21 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Implement Appwrite authentication
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 1000);
+    try {
+      await signup(email, password, name);
+      toast({
+        title: "Account created!",
+        description: "Welcome to EventMesh. Your workspace is ready.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "Could not create account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

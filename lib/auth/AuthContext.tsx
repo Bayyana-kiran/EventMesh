@@ -1,11 +1,15 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { account } from "@/lib/appwrite/client";
-import { Models } from "appwrite";
+import { account, databases } from "@/lib/appwrite/client";
+import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
+import { Models, ID, Query } from "appwrite";
+import { useRouter } from "next/navigation";
+import type { Workspace } from "@/lib/types";
 
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
+  workspace: Workspace | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
@@ -19,14 +23,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
     null
   );
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  const loadWorkspace = async (userId: string) => {
+    try {
+      const response = await databases.listDocuments<Workspace>(
+        APPWRITE_DATABASE_ID,
+        COLLECTION_IDS.WORKSPACES,
+        [Query.equal("owner_id", userId)]
+      );
+
+      if (response.documents.length > 0) {
+        setWorkspace(response.documents[0]);
+      } else {
+        // Create workspace if none exists
+        try {
+          const newWorkspace = await databases.createDocument<Workspace>(
+            APPWRITE_DATABASE_ID,
+            COLLECTION_IDS.WORKSPACES,
+            ID.unique(),
+            {
+              name: "My Workspace",
+              owner_id: userId,
+              created_at: new Date().toISOString(),
+              settings: JSON.stringify({
+                timezone: "UTC",
+                retention_days: 30,
+              }),
+            }
+          );
+          setWorkspace(newWorkspace);
+        } catch (createError: any) {
+          console.error("Failed to create workspace:", createError);
+          console.error(
+            "Please set permissions on the 'workspaces' collection in Appwrite Console"
+          );
+          // Set a temporary workspace object so the app doesn't break
+          const tempWorkspace: any = {
+            $id: "temp-workspace",
+            name: "Temporary Workspace (Fix Permissions)",
+            owner_id: userId,
+            created_at: new Date().toISOString(),
+            settings: JSON.stringify({
+              timezone: "UTC",
+              retention_days: 30,
+            }),
+          };
+          setWorkspace(tempWorkspace);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load workspace:", error);
+    }
+  };
 
   const checkSession = async () => {
     try {
       const session = await account.get();
       setUser(session);
+      await loadWorkspace(session.$id);
     } catch (error) {
       setUser(null);
+      setWorkspace(null);
     } finally {
       setLoading(false);
     }
@@ -39,7 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       await account.createEmailPasswordSession(email, password);
-      await checkSession();
+      const session = await account.get();
+      setUser(session);
+      await loadWorkspace(session.$id);
+      router.push("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -48,9 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (email: string, password: string, name: string) => {
     try {
-      await account.create("unique()", email, password, name);
+      await account.create(ID.unique(), email, password, name);
       await login(email, password);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup failed:", error);
       throw error;
     }
@@ -60,6 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await account.deleteSession("current");
       setUser(null);
+      setWorkspace(null);
+      router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
       throw error;
@@ -70,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        workspace,
         loading,
         login,
         signup,

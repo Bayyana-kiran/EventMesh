@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,37 +17,50 @@ import {
   MoreVertical,
   TrendingUp,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { useFlows } from "@/lib/hooks/useFlows";
+import { Badge } from "@/components/ui/badge";
 
 export default function FlowsListPage() {
-  const flows = [
-    {
-      id: "1",
-      name: "GitHub to Slack",
-      description: "Forward GitHub push events to Slack #engineering",
-      status: "active",
-      eventsToday: 234,
-      successRate: 98.5,
-      lastRun: "2 min ago",
-    },
-    {
-      id: "2",
-      name: "Stripe to CRM",
-      description: "Sync Stripe payments to your CRM",
-      status: "active",
-      eventsToday: 89,
-      successRate: 100,
-      lastRun: "5 min ago",
-    },
-    {
-      id: "3",
-      name: "Form to Email",
-      description: "Send form submissions via email",
-      status: "paused",
-      eventsToday: 12,
-      successRate: 95.2,
-      lastRun: "1 hour ago",
-    },
-  ];
+  const { workspace } = useAuth();
+  const { data: flowsData, isLoading, error } = useFlows(workspace?.$id);
+  const flows = flowsData || [];
+
+  console.log("🔍 Flows page debug:", {
+    workspace: workspace?.$id,
+    flowsData,
+    isLoading,
+    error,
+    flowsCount: flows.length,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Flows</h1>
+            <p className="text-muted-foreground mt-2">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Flows</h1>
+            <p className="text-destructive mt-2">
+              Error loading flows: {error.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -69,7 +84,7 @@ export default function FlowsListPage() {
       <div className="grid grid-cols-1 gap-6">
         {flows.map((flow) => (
           <Card
-            key={flow.id}
+            key={flow.$id}
             className="hover:border-primary/50 transition-colors"
           >
             <CardHeader>
@@ -80,19 +95,17 @@ export default function FlowsListPage() {
                   </div>
                   <div>
                     <CardTitle className="text-xl">{flow.name}</CardTitle>
-                    <CardDescription>{flow.description}</CardDescription>
+                    <CardDescription>
+                      {flow.description || "No description"}
+                    </CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      flow.status === "active"
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground"
-                    }`}
+                  <Badge
+                    variant={flow.status === "active" ? "default" : "secondary"}
                   >
                     {flow.status}
-                  </div>
+                  </Badge>
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -100,41 +113,31 @@ export default function FlowsListPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <div className="text-2xl font-bold">{flow.eventsToday}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Events Today
+                  <div className="text-sm text-muted-foreground">
+                    Webhook URL
                   </div>
+                  <code className="text-xs bg-muted px-2 py-1 rounded mt-1 block truncate">
+                    {flow.webhook_url}
+                  </code>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    {flow.successRate}%
-                    <TrendingUp className="h-4 w-4 text-primary" />
+                  <div className="text-sm text-muted-foreground">Created</div>
+                  <div className="text-sm mt-1">
+                    {new Date(
+                      flow.$createdAt || flow.created_at
+                    ).toLocaleDateString()}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Success Rate
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium">{flow.lastRun}</div>
-                  <div className="text-xs text-muted-foreground">Last Run</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <Link href={`/dashboard/flows/${flow.id}`} className="flex-1">
+                <Link href={`/dashboard/flows/${flow.$id}`} className="flex-1">
                   <Button variant="outline" className="w-full">
-                    View Flow
+                    Configure Flow
                   </Button>
                 </Link>
-                <Button variant="ghost" size="icon">
-                  {flow.status === "active" ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
             </CardContent>
           </Card>
