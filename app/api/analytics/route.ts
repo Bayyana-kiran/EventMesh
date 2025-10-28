@@ -48,16 +48,18 @@ export async function GET(request: Request) {
           (e: any) => e.workspace_id === workspaceId
         )
       : eventsResponse.documents;
+    
+    const flowIds = new Set(flows.map((f: any) => f.$id));
     const executions = workspaceId
-      ? executionsResponse.documents.filter(
-          (e: any) => e.workspace_id === workspaceId
+      ? executionsResponse.documents.filter((e: any) =>
+          Boolean(e.flow_id && flowIds.has(e.flow_id))
         )
       : executionsResponse.documents;
 
     // Calculate KPIs
     const totalEvents = events.length;
     const completedExecutions = executions.filter(
-      (e: any) => e.status === "completed"
+      (e: any) => e.status === "success" || e.status === "completed"
     ).length;
     const failedExecutions = executions.filter(
       (e: any) => e.status === "failed"
@@ -70,7 +72,9 @@ export async function GET(request: Request) {
 
     // Calculate average response time
     const completedWithDuration = executions.filter(
-      (e: any) => e.status === "completed" && e.duration
+      (e: any) =>
+        (e.status === "success" || e.status === "completed") &&
+        (e.duration || e.duration === 0)
     );
     const avgResponseTime =
       completedWithDuration.length > 0
@@ -127,7 +131,7 @@ export async function GET(request: Request) {
           (e: any) => e.flow_id === flow.$id
         );
         const flowCompleted = flowExecutions.filter(
-          (e: any) => e.status === "completed"
+          (e: any) => e.status === "success" || e.status === "completed"
         ).length;
         const flowFailed = flowExecutions.filter(
           (e: any) => e.status === "failed"

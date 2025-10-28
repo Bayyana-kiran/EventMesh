@@ -15,8 +15,14 @@ async function executeFlowAsync(
   eventId: string,
   payload: any
 ) {
+  // make startTime visible to both try and catch blocks
+  let startTime = 0;
+
   try {
     console.log("🎯 Starting async flow execution:", executionId);
+
+    // measure execution duration locally (will be saved on the execution doc)
+    startTime = Date.now();
 
     // Update execution status to running
     await databases.updateDocument(
@@ -45,6 +51,9 @@ async function executeFlowAsync(
     // Execute the flow
     const result = await engine.execute();
 
+    // Calculate duration in ms
+    const durationMs = Math.round(Date.now() - startTime);
+
     // Update execution with results
     if (result.success) {
       await databases.updateDocument(
@@ -54,6 +63,7 @@ async function executeFlowAsync(
         {
           status: "completed",
           completed_at: new Date().toISOString(),
+          duration: durationMs,
         }
       );
 
@@ -74,6 +84,7 @@ async function executeFlowAsync(
         {
           status: "failed",
           completed_at: new Date().toISOString(),
+          duration: durationMs,
         }
       );
 
@@ -90,8 +101,10 @@ async function executeFlowAsync(
   } catch (error: unknown) {
     console.error("❌ Async execution error:", error);
 
-    // Update execution status to failed
+    // Update execution status to failed (ensure duration is saved if possible)
     try {
+      const durationMs =
+        Date.now() - (typeof startTime === "number" ? startTime : Date.now());
       await databases.updateDocument(
         APPWRITE_DATABASE_ID,
         COLLECTION_IDS.EXECUTIONS,
@@ -99,6 +112,7 @@ async function executeFlowAsync(
         {
           status: "failed",
           completed_at: new Date().toISOString(),
+          duration: Math.round(durationMs),
         }
       );
     } catch (updateError) {
@@ -181,6 +195,7 @@ export async function POST(
       COLLECTION_IDS.EXECUTIONS,
       ID.unique(),
       {
+        workspace_id: flow.workspace_id,
         flow_id: flow.$id,
         event_id: event.$id,
         status: "pending",

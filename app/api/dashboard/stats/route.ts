@@ -71,14 +71,20 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
+    // Executions may not always include workspace_id. Use the flow -> workspace
+    // relationship to filter executions for the requested workspace: build a
+    // set of flow IDs for this workspace and include executions whose flow_id
+    // belongs to that set.
+    const flowIds = new Set(flows.map((f: any) => f.$id));
     const executions = workspaceId
-      ? executionsResponse.documents.filter(
-          (e: any) => e.workspace_id === workspaceId
+      ? executionsResponse.documents.filter((e: any) =>
+          Boolean(e.flow_id && flowIds.has(e.flow_id))
         )
       : executionsResponse.documents;
 
+    // Accept both 'success' and legacy 'completed' statuses
     const completedExecutions = executions.filter(
-      (e: any) => e.status === "completed"
+      (e: any) => e.status === "success" || e.status === "completed"
     ).length;
     const failedExecutions = executions.filter(
       (e: any) => e.status === "failed"
@@ -91,15 +97,18 @@ export async function GET(request: Request) {
 
     // Calculate average latency from recent executions
     const recentExecutions = executions
-      .filter((e: any) => e.status === "completed" && e.duration)
+      .filter(
+        (e: any) =>
+          (e.status === "success" || e.status === "completed") &&
+          (e.duration || e.duration_ms || e.durationMs)
+      )
       .slice(0, 50);
 
     let avgLatency = 0;
     if (recentExecutions.length > 0) {
-      const totalDuration = recentExecutions.reduce(
-        (sum: number, e: any) => sum + (e.duration || 0),
-        0
-      );
+      const totalDuration = recentExecutions.reduce((sum: number, e: any) => {
+        return sum + (e.duration ?? e.duration_ms ?? e.durationMs ?? 0);
+      }, 0);
       avgLatency = Math.round(totalDuration / recentExecutions.length);
     }
 

@@ -20,13 +20,7 @@ export default function FlowsListPage() {
   const { data: flowsData, isLoading, error } = useFlows(workspace?.$id);
   const flows = flowsData || [];
 
-  console.log("🔍 Flows page debug:", {
-    workspace: workspace?.$id,
-    flowsData,
-    isLoading,
-    error,
-    flowsCount: flows.length,
-  });
+  // debug logs removed before commit
 
   if (isLoading) {
     return <PageLoading text="Loading flows..." />;
