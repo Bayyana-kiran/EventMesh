@@ -281,14 +281,7 @@ return {
                 <p className="text-xs text-muted-foreground">
                   Data will be sent as JSON POST request
                 </p>
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md text-xs border border-blue-200 dark:border-blue-800">
-                  <p className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                    💡 Test Endpoint:
-                  </p>
-                  <code className="text-blue-700 dark:text-blue-300 break-all">
-                    http://localhost:3000/api/test-webhook
-                  </code>
-                </div>
+                {/* Test endpoint removed: use a real webhook URL (e.g. /api/webhook/{webhook_id}) */}
               </div>
             )}
           </div>
