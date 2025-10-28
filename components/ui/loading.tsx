@@ -28,12 +28,7 @@ export function Loading({
         className
       )}
     >
-      <Loader2
-        className={cn(
-          "animate-spin text-primary",
-          sizeClasses[size]
-        )}
-      />
+      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
       {text && (
         <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
       )}
@@ -52,14 +47,16 @@ export function Loading({
 }
 
 // Spinner component for inline use
-export function Spinner({ className, size = "md" }: { className?: string; size?: "sm" | "md" | "lg" | "xl" }) {
+export function Spinner({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
   return (
     <Loader2
-      className={cn(
-        "animate-spin text-primary",
-        sizeClasses[size],
-        className
-      )}
+      className={cn("animate-spin text-primary", sizeClasses[size], className)}
     />
   );
 }
