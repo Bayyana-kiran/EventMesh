@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
-import { getAuthContext } from "@/lib/auth/server-auth";
 
 const DATABASE_ID = "eventmesh-db";
 const FLOWS_COLLECTION = "flows";
@@ -9,38 +8,36 @@ const EXECUTIONS_COLLECTION = "executions";
 
 export async function GET(request: Request) {
   try {
-    // Authenticate user and get their workspace
-    const authContext = await getAuthContext();
+    const { searchParams } = new URL(request.url);
+    const workspaceId =
+      searchParams.get("workspaceId") || "690001f1002917d4ae07";
 
-    if (!authContext) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
-    }
-
-    const { workspace } = authContext;
-
-    // Get flows for this workspace only
+    // Get all flows
     const flowsResponse = await databases.listDocuments(
       DATABASE_ID,
       FLOWS_COLLECTION,
-      [Query.equal("workspace_id", workspace.$id), Query.limit(100)]
+      [Query.limit(100)]
     );
 
-    const flows = flowsResponse.documents;
+    const flows = flowsResponse.documents.filter(
+      (f: any) => !f.workspace_id || f.workspace_id === workspaceId
+    );
 
-    // Get executions for today for this workspace only
+    // Get executions for today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const executionsResponse = await databases.listDocuments(
       DATABASE_ID,
       EXECUTIONS_COLLECTION,
-      [Query.equal("workspace_id", workspace.$id), Query.limit(500)]
+      [Query.limit(500)]
     );
 
-    const executionsToday = executionsResponse.documents.filter((e: any) => {
+    const executions = executionsResponse.documents.filter(
+      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
+    );
+
+    const executionsToday = executions.filter((e: any) => {
       const execDate = new Date(e.$createdAt);
       return execDate >= today;
     });

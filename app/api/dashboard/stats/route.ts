@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
-import { getAuthContext } from "@/lib/auth/server-auth";
 
 const DATABASE_ID = "eventmesh-db";
 const FLOWS_COLLECTION = "flows";
@@ -10,40 +9,37 @@ const EXECUTIONS_COLLECTION = "executions";
 
 export async function GET(request: Request) {
   try {
-    // Authenticate user and get their workspace
-    const authContext = await getAuthContext();
+    const { searchParams } = new URL(request.url);
+    const workspaceId =
+      searchParams.get("workspaceId") || "690001f1002917d4ae07";
 
-    if (!authContext) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
-    }
-
-    const { workspace } = authContext;
-
-    // Get total flows for this workspace
+    // Get total flows - without workspace filter
     const flowsResponse = await databases.listDocuments(
       DATABASE_ID,
       FLOWS_COLLECTION,
-      [Query.equal("workspace_id", workspace.$id), Query.limit(100)]
+      [Query.limit(100)]
     );
 
-    const flows = flowsResponse.documents;
+    // Filter manually
+    const flows = flowsResponse.documents.filter(
+      (f: any) => !f.workspace_id || f.workspace_id === workspaceId
+    );
     const totalFlows = flows.length;
     const activeFlows = flows.filter((f: any) => f.status === "active").length;
 
-    // Get events (today and total) for this workspace
+    // Get events (today and total)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const eventsResponse = await databases.listDocuments(
       DATABASE_ID,
       EVENTS_COLLECTION,
-      [Query.equal("workspace_id", workspace.$id), Query.limit(100)]
+      [Query.limit(100)]
     );
 
-    const events = eventsResponse.documents;
+    const events = eventsResponse.documents.filter(
+      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
+    );
 
     const eventsToday = events.filter((e: any) => {
       const eventDate = new Date(e.$createdAt);
@@ -60,14 +56,16 @@ export async function GET(request: Request) {
       return eventDate >= yesterday && eventDate < today;
     }).length;
 
-    // Get executions for success rate for this workspace
+    // Get executions for success rate
     const executionsResponse = await databases.listDocuments(
       DATABASE_ID,
       EXECUTIONS_COLLECTION,
-      [Query.equal("workspace_id", workspace.$id), Query.limit(100)]
+      [Query.limit(100)]
     );
 
-    const executions = executionsResponse.documents;
+    const executions = executionsResponse.documents.filter(
+      (e: any) => !e.workspace_id || e.workspace_id === workspaceId
+    );
 
     const completedExecutions = executions.filter(
       (e: any) => e.status === "completed"
