@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 interface Workspace {
   $id: string;
@@ -29,59 +30,39 @@ interface WorkspaceSelectorProps {
 export function WorkspaceSelector({
   collapsed = false,
 }: WorkspaceSelectorProps) {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(
-    null
-  );
+  const { user, workspace, workspaces, switchWorkspace, refreshWorkspaces } =
+    useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchWorkspaces();
-  }, []);
-
-  const fetchWorkspaces = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/workspace");
-      const data = await response.json();
-
-      if (data.success) {
-        setWorkspaces(data.workspaces || []);
-        setCurrentWorkspace(data.current || data.workspaces?.[0] || null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch workspaces:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateWorkspace = async () => {
-    if (!newWorkspaceName.trim()) return;
+    if (!newWorkspaceName.trim() || !user?.$id) return;
 
     try {
       setCreating(true);
       const response = await fetch("/api/workspace", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newWorkspaceName }),
+        body: JSON.stringify({
+          name: newWorkspaceName,
+          userId: user.$id,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        await fetchWorkspaces();
+        // Refresh workspaces list from AuthContext
+        await refreshWorkspaces();
         setNewWorkspaceName("");
         setIsCreating(false);
         setIsOpen(false);
 
         // Switch to the new workspace
         if (data.workspace) {
-          handleSwitchWorkspace(data.workspace.$id);
+          await switchWorkspace(data.workspace.$id);
         }
       } else {
         alert(data.error || "Failed to create workspace");
@@ -96,22 +77,10 @@ export function WorkspaceSelector({
 
   const handleSwitchWorkspace = async (workspaceId: string) => {
     try {
-      const response = await fetch("/api/workspace/switch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setCurrentWorkspace(
-          workspaces.find((w) => w.$id === workspaceId) || null
-        );
-        setIsOpen(false);
-        // Reload the page to refresh all workspace-specific data
-        window.location.reload();
-      }
+      await switchWorkspace(workspaceId);
+      setIsOpen(false);
+      // Reload the page to refresh all workspace-specific data
+      window.location.reload();
     } catch (error) {
       console.error("Failed to switch workspace:", error);
     }
@@ -129,11 +98,10 @@ export function WorkspaceSelector({
         </DialogTrigger>
         <WorkspaceDialogContent
           workspaces={workspaces}
-          currentWorkspace={currentWorkspace}
+          currentWorkspace={workspace}
           isCreating={isCreating}
           newWorkspaceName={newWorkspaceName}
           creating={creating}
-          loading={loading}
           setIsCreating={setIsCreating}
           setNewWorkspaceName={setNewWorkspaceName}
           handleSwitchWorkspace={handleSwitchWorkspace}
@@ -155,9 +123,7 @@ export function WorkspaceSelector({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">
-                  {loading
-                    ? "Loading..."
-                    : currentWorkspace?.name || "My Workspace"}
+                  {workspace?.name || "My Workspace"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {workspaces.length} workspace
@@ -170,11 +136,10 @@ export function WorkspaceSelector({
         </DialogTrigger>
         <WorkspaceDialogContent
           workspaces={workspaces}
-          currentWorkspace={currentWorkspace}
+          currentWorkspace={workspace}
           isCreating={isCreating}
           newWorkspaceName={newWorkspaceName}
           creating={creating}
-          loading={loading}
           setIsCreating={setIsCreating}
           setNewWorkspaceName={setNewWorkspaceName}
           handleSwitchWorkspace={handleSwitchWorkspace}
@@ -191,7 +156,6 @@ function WorkspaceDialogContent({
   isCreating,
   newWorkspaceName,
   creating,
-  loading,
   setIsCreating,
   setNewWorkspaceName,
   handleSwitchWorkspace,
@@ -202,7 +166,6 @@ function WorkspaceDialogContent({
   isCreating: boolean;
   newWorkspaceName: string;
   creating: boolean;
-  loading: boolean;
   setIsCreating: (value: boolean) => void;
   setNewWorkspaceName: (value: string) => void;
   handleSwitchWorkspace: (id: string) => void;
@@ -272,78 +235,66 @@ function WorkspaceDialogContent({
         </div>
       ) : (
         <div className="space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {workspaces.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No workspaces found</p>
-                  </div>
-                ) : (
-                  workspaces.map((workspace) => (
-                    <button
-                      key={workspace.$id}
-                      onClick={() => handleSwitchWorkspace(workspace.$id)}
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {workspaces.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No workspaces found</p>
+              </div>
+            ) : (
+              workspaces.map((workspace) => (
+                <button
+                  key={workspace.$id}
+                  onClick={() => handleSwitchWorkspace(workspace.$id)}
+                  className={cn(
+                    "w-full group relative overflow-hidden rounded-lg border p-3 text-left transition-all",
+                    currentWorkspace?.$id === workspace.$id
+                      ? "border-primary bg-primary/5"
+                      : "border-border/50 hover:border-primary/50 hover:bg-muted"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
                       className={cn(
-                        "w-full group relative overflow-hidden rounded-lg border p-3 text-left transition-all",
+                        "h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
                         currentWorkspace?.$id === workspace.$id
-                          ? "border-primary bg-primary/5"
-                          : "border-border/50 hover:border-primary/50 hover:bg-muted"
+                          ? "from-primary/20 to-secondary/20"
+                          : "from-muted to-muted/50"
                       )}
                     >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "h-10 w-10 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
-                            currentWorkspace?.$id === workspace.$id
-                              ? "from-primary/20 to-secondary/20"
-                              : "from-muted to-muted/50"
-                          )}
-                        >
-                          <Building2
-                            className={cn(
-                              "h-5 w-5",
-                              currentWorkspace?.$id === workspace.$id
-                                ? "text-primary"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">
-                            {workspace.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Created{" "}
-                            {new Date(
-                              workspace.created_at
-                            ).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {currentWorkspace?.$id === workspace.$id && (
-                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                      <Building2
+                        className={cn(
+                          "h-5 w-5",
+                          currentWorkspace?.$id === workspace.$id
+                            ? "text-primary"
+                            : "text-muted-foreground"
                         )}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{workspace.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Created{" "}
+                        {new Date(workspace.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {currentWorkspace?.$id === workspace.$id && (
+                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
 
-              <Button
-                onClick={() => setIsCreating(true)}
-                variant="outline"
-                className="w-full gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Workspace
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={() => setIsCreating(true)}
+            variant="outline"
+            className="w-full gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Workspace
+          </Button>
         </div>
       )}
     </DialogContent>

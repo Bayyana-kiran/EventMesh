@@ -59,13 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the workspace
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "User ID is required" },
-        { status: 400 }
-      );
-    }
+  
 
     // Create the workspace
     const workspace = await databases.createDocument(

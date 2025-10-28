@@ -10,11 +10,14 @@ import type { Workspace } from "@/lib/types";
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
   workspace: Workspace | null;
+  workspaces: Workspace[];
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  switchWorkspace: (workspaceId: string) => Promise<void>;
+  refreshWorkspaces: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,19 +27,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     null
   );
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const loadWorkspace = async (userId: string) => {
+  const loadWorkspaces = async (userId: string, selectFirst = true) => {
     try {
       const response = await databases.listDocuments<Workspace>(
         APPWRITE_DATABASE_ID,
         COLLECTION_IDS.WORKSPACES,
-        [Query.equal("owner_id", userId)]
+        [Query.equal("owner_id", userId), Query.orderDesc("$createdAt")]
       );
 
+      setWorkspaces(response.documents);
+
       if (response.documents.length > 0) {
-        setWorkspace(response.documents[0]);
+        // Check for saved workspace in localStorage
+        const savedWorkspaceId = localStorage.getItem("currentWorkspaceId");
+        const savedWorkspace = savedWorkspaceId
+          ? response.documents.find((w) => w.$id === savedWorkspaceId)
+          : null;
+
+        // Use saved workspace, or first one if selectFirst is true
+        if (savedWorkspace) {
+          setWorkspace(savedWorkspace);
+        } else if (selectFirst) {
+          setWorkspace(response.documents[0]);
+          localStorage.setItem("currentWorkspaceId", response.documents[0].$id);
+        }
       } else {
         // Create workspace if none exists
         try {
@@ -54,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }),
             }
           );
+          setWorkspaces([newWorkspace]);
           setWorkspace(newWorkspace);
+          localStorage.setItem("currentWorkspaceId", newWorkspace.$id);
         } catch (createError: any) {
           console.error("Failed to create workspace:", createError);
           console.error(
@@ -71,11 +91,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               retention_days: 30,
             }),
           };
+          setWorkspaces([tempWorkspace]);
           setWorkspace(tempWorkspace);
         }
       }
     } catch (error) {
-      console.error("Failed to load workspace:", error);
+      console.error("Failed to load workspaces:", error);
+    }
+  };
+
+  const switchWorkspace = async (workspaceId: string) => {
+    const selectedWorkspace = workspaces.find((w) => w.$id === workspaceId);
+    if (selectedWorkspace) {
+      setWorkspace(selectedWorkspace);
+      localStorage.setItem("currentWorkspaceId", workspaceId);
+    }
+  };
+
+  const refreshWorkspaces = async () => {
+    if (user?.$id) {
+      await loadWorkspaces(user.$id, false);
     }
   };
 
@@ -83,10 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const session = await account.get();
       setUser(session);
-      await loadWorkspace(session.$id);
+      await loadWorkspaces(session.$id);
     } catch (error) {
       setUser(null);
       setWorkspace(null);
+      setWorkspaces([]);
     } finally {
       setLoading(false);
     }
@@ -115,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await account.createEmailPasswordSession(email, password);
       const session = await account.get();
       setUser(session);
-      await loadWorkspace(session.$id);
+      await loadWorkspaces(session.$id);
       router.push("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
@@ -138,6 +174,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await account.deleteSession("current");
       setUser(null);
       setWorkspace(null);
+      setWorkspaces([]);
+      localStorage.removeItem("currentWorkspaceId");
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -150,11 +188,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         workspace,
+        workspaces,
         loading,
         login,
         signup,
         logout,
         checkSession,
+        switchWorkspace,
+        refreshWorkspaces,
       }}
     >
       {children}
