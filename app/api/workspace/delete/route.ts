@@ -231,7 +231,8 @@ export async function DELETE(request: NextRequest) {
     console.error("❌ DELETE /api/workspace/delete error:", error);
 
     // Provide more helpful error messages
-    if (error.code === 404) {
+    const err: any = error;
+    if (err.code === 404) {
       return NextResponse.json(
         {
           success: false,
@@ -241,7 +242,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (error.code === 401 || error.code === 403) {
+    if (err.code === 401 || err.code === 403) {
       return NextResponse.json(
         {
           success: false,
@@ -254,8 +255,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to delete workspace",
-        details: error.code ? `Error code: ${error.code}` : undefined,
+        error: err.message || "Failed to delete workspace",
+        details: err.code ? `Error code: ${err.code}` : undefined,
       },
       { status: 500 }
     );

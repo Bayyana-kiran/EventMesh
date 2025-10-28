@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
       current: workspaces[0] || null,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("GET /api/workspace error:", error);
     return NextResponse.json(
       { success: false, error: errorMessage || "Failed to fetch workspaces" },
@@ -60,8 +61,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  
-
     // Create the workspace
     const workspace = await databases.createDocument(
       process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
@@ -87,7 +86,12 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/workspace error:", error);
 
     // Provide more helpful error messages
-    if (error.code === 401) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: number }).code === 401
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -98,7 +102,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error.code === 404) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: number }).code === 404
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -111,8 +120,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to create workspace",
-        details: error.code ? `Error code: ${error.code}` : undefined,
+        error:
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message?: string }).message
+            : "Failed to create workspace",
+        details:
+          typeof error === "object" && error !== null && "code" in error
+            ? `Error code: ${(error as { code?: number }).code}`
+            : undefined,
       },
       { status: 500 }
     );
