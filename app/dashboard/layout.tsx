@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { WorkspaceSelector } from "@/components/layout/WorkspaceSelector";
 
 const navigation = [
   {
@@ -144,21 +145,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Workspace Selector */}
-          <div className="relative p-3 border-b border-border/50">
-            <button className="w-full group relative overflow-hidden rounded-lg border border-border/50 bg-muted/50 p-3 text-left transition-all hover:border-primary/50 hover:bg-muted">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">My Workspace</p>
-                  <p className="text-xs text-muted-foreground">Free Plan</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </button>
-          </div>
+          <WorkspaceSelector />
 
           {/* Navigation */}
           <nav className="relative flex-1 space-y-1 p-3 overflow-y-auto">
@@ -342,25 +329,7 @@ export default function DashboardLayout({
           )}
 
           {/* Workspace Selector */}
-          {!collapsed && (
-            <div className="relative p-3 border-b border-border/50">
-              <button className="w-full group relative overflow-hidden rounded-lg border border-border/50 bg-muted/50 p-3 text-left transition-all hover:border-primary/50 hover:bg-muted">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                    <Building2 className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      My Workspace
-                    </p>
-                    <p className="text-xs text-muted-foreground">Free Plan</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-              </button>
-            </div>
-          )}
+          <WorkspaceSelector collapsed={collapsed} />
 
           {/* Navigation */}
           <nav className="relative flex-1 space-y-1 p-3 overflow-y-auto">
