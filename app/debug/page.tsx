@@ -110,7 +110,7 @@ export default function DebugPage() {
                 }
 
                 const testEmail = `test-${Date.now()}@example.com`;
-                const testPassword = "Test123456!";
+                const testPassword = `Test${Math.random().toString(36).slice(2, 10)}!${Date.now()}`;
                 const testName = "Test User";
 
                 console.log("Creating test account:", { testEmail, testName });

@@ -10,9 +10,18 @@ const EXECUTIONS_COLLECTION = "executions";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const workspaceId =
-      searchParams.get("workspaceId") || "690001f1002917d4ae07";
+    const workspaceId = searchParams.get("workspaceId");
     const days = parseInt(searchParams.get("days") || "7");
+
+    if (!workspaceId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Workspace ID is required",
+        },
+        { status: 400 }
+      );
+    }
 
     // Get all data - remove workspace_id filter since not all collections have it
     const flowsResponse = await databases.listDocuments(

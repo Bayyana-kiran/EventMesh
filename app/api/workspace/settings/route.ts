@@ -9,8 +9,17 @@ const API_KEYS_COLLECTION = "api_keys";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const workspaceId =
-      searchParams.get("workspaceId") || "690001f1002917d4ae07";
+    const workspaceId = searchParams.get("workspaceId");
+
+    if (!workspaceId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Workspace ID is required",
+        },
+        { status: 400 }
+      );
+    }
 
     // Get workspace details
     const workspace = await databases.getDocument(

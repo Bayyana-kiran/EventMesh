@@ -4,7 +4,9 @@ Since the automated script has region issues, follow these steps in Appwrite Con
 
 ## Step 1: Go to Appwrite Console
 
-Visit: https://cloud.appwrite.io/console/project-68fbf56a0024726bc87e
+Visit your Appwrite Console at: `https://cloud.appwrite.io/console`
+
+Navigate to your project.
 
 ## Step 2: Create Database
 

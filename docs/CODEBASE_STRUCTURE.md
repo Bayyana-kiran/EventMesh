@@ -248,13 +248,11 @@ lib/  - Slack: Formatted message blocks
 
 │   ├── client.ts             # Client-side SDK- **Analytics:** Charts with recharts (events over time, success rates)
 
-│   ├── client-hardcoded.ts   # Hardcoded config- **Flow Builder:** Visual DAG editor with React Flow
+│   ├── server.ts             # Server-side SDK- **Flow Builder:** Visual DAG editor with React Flow
 
-│   ├── server.ts             # Server-side SDK- **Events:** Real event logs with filtering
+│   └── database.ts           # Database helpers- **Events:** Real event logs with filtering
 
-│   └── database.ts           # Database helpers- **Destinations:** All configured destinations
-
-│- **Settings:** Workspace management
+│- **Destinations:** All configured destinations
 
 ├── auth/                     # Authentication- **Playground:** Live webhook testing
 
