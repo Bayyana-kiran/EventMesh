@@ -13,11 +13,6 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get("workspaceId");
-
-    // Make workspaceId optional - if not provided, return data for all workspaces
-    // This allows the page to load even without workspace context
-
-    // Get total flows - without workspace filter
     const flowsResponse = await databases.listDocuments(
       DATABASE_ID,
       FLOWS_COLLECTION,
@@ -71,10 +66,6 @@ export async function GET(request: Request) {
       [Query.limit(100)]
     );
 
-    // Executions may not always include workspace_id. Use the flow -> workspace
-    // relationship to filter executions for the requested workspace: build a
-    // set of flow IDs for this workspace and include executions whose flow_id
-    // belongs to that set.
     const flowIds = new Set(flows.map((f: any) => f.$id));
     const executions = workspaceId
       ? executionsResponse.documents.filter((e: any) =>
@@ -95,19 +86,42 @@ export async function GET(request: Request) {
         ? ((completedExecutions / totalExecutions) * 100).toFixed(1)
         : "0.0";
 
-    // Calculate average latency from recent executions
-    const recentExecutions = executions
-      .filter(
-        (e: any) =>
-          (e.status === "success" || e.status === "completed") &&
-          (e.duration || e.duration_ms || e.durationMs)
-      )
+    const executionsWithDuration = executions
+      .filter((e: any) => e.status === "success" || e.status === "completed")
+      .map((e: any) => ({
+        ...e,
+        _rawDuration: e.duration ?? e.duration_ms ?? e.durationMs,
+        _duration: Number(e.duration ?? e.duration_ms ?? e.durationMs ?? NaN),
+        _completedAt: e.completed_at || e.$updatedAt || e.$createdAt || null,
+      }))
+      .map((e: any) => {
+        if (!Number.isFinite(e._duration)) {
+          if (e.started_at && e.completed_at) {
+            const started = new Date(e.started_at).getTime();
+            const completed = new Date(e.completed_at).getTime();
+            const computed =
+              Number.isFinite(started) && Number.isFinite(completed)
+                ? Math.max(0, Math.round(completed - started))
+                : NaN;
+            return { ...e, _duration: computed };
+          }
+        }
+        return e;
+      })
+      .filter((e: any) => Number.isFinite(e._duration));
+
+    const recentExecutions = executionsWithDuration
+      .sort((a: any, b: any) => {
+        const ta = a._completedAt ? new Date(a._completedAt).getTime() : 0;
+        const tb = b._completedAt ? new Date(b._completedAt).getTime() : 0;
+        return tb - ta;
+      })
       .slice(0, 50);
 
     let avgLatency = 0;
     if (recentExecutions.length > 0) {
       const totalDuration = recentExecutions.reduce((sum: number, e: any) => {
-        return sum + (e.duration ?? e.duration_ms ?? e.durationMs ?? 0);
+        return sum + Number(e._duration ?? 0);
       }, 0);
       avgLatency = Math.round(totalDuration / recentExecutions.length);
     }
@@ -168,7 +182,9 @@ export async function GET(request: Request) {
         ? "100"
         : "0";
 
-    return NextResponse.json({
+    const debugMode = searchParams.get("debug") === "true";
+
+    const responsePayload: any = {
       success: true,
       stats: {
         totalFlows,
@@ -181,7 +197,21 @@ export async function GET(request: Request) {
       },
       recentFlows,
       recentEvents,
-    });
+    };
+
+    if (debugMode) {
+      // include helpful diagnostic info to understand why avgLatency might be 0
+      responsePayload._debug = {
+        executionsTotal: executions.length,
+        executionsWithDuration: executionsWithDuration.length,
+        recentExecutionsCount: recentExecutions.length,
+        recentDurationsSample: recentExecutions
+          .slice(0, 10)
+          .map((e: any) => Number(e._duration ?? 0)),
+      };
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "An error occurred";
