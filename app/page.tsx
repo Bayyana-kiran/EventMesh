@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -16,8 +18,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AnimatedFlowDemo } from "@/components/landing/AnimatedFlowDemo";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
@@ -56,12 +61,20 @@ export default function HomePage() {
               </Link>
             </nav>
             <div className="flex items-center gap-3">
-              <Link href="/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/signup">
-                <Button>Get Started</Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button>Go to Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost">Sign In</Button>
+                  </Link>
+                  <Link href="/signup">
+                    <Button>Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -100,18 +113,29 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup">
-                <Button size="lg" className="gap-2">
-                  Start Building Free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="#demo">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Play className="h-4 w-4" />
-                  Watch Demo
-                </Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button size="lg" className="gap-2">
+                    Go to Dashboard
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/signup">
+                    <Button size="lg" className="gap-2">
+                      Start Building Free
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="#demo">
+                    <Button size="lg" variant="outline" className="gap-2">
+                      <Play className="h-4 w-4" />
+                      Watch Demo
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -398,21 +422,32 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 text-base px-8 py-6">
-                Get Started Free
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/docs">
-              <Button
-                size="lg"
-                variant="outline"
-                className="gap-2 text-base px-8 py-6"
-              >
-                View Documentation
-              </Button>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <Button size="lg" className="gap-2 text-base px-8 py-6">
+                  Go to Dashboard
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/signup">
+                  <Button size="lg" className="gap-2 text-base px-8 py-6">
+                    Get Started Free
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/docs">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="gap-2 text-base px-8 py-6"
+                  >
+                    View Documentation
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Simple Feature List */}
