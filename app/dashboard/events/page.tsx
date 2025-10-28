@@ -17,6 +17,7 @@ import {
   ArrowRight,
   RefreshCw,
 } from "lucide-react";
+import { PageLoading } from "@/components/ui/loading";
 
 interface Event {
   $id: string;

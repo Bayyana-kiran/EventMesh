@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useToast } from "@/lib/hooks/use-toast";
 import { account } from "@/lib/appwrite/client";
 import { OAuthProvider } from "appwrite";
+import { Spinner } from "@/components/ui/loading";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -123,8 +124,17 @@ export default function LoginPage() {
                 className="w-full gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
-                <ArrowRight className="h-4 w-4" />
+                {isLoading ? (
+                  <>
+                    <Spinner size="sm" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
 

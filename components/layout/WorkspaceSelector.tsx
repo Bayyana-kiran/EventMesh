@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { Spinner } from "@/components/ui/loading";
 
 interface Workspace {
   $id: string;
@@ -221,7 +222,7 @@ function WorkspaceDialogContent({
             >
               {creating ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner size="sm" />
                   Creating...
                 </>
               ) : (

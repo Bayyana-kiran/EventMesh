@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useToast } from "@/lib/hooks/use-toast";
+import { Spinner } from "@/components/ui/loading";
 import { account } from "@/lib/appwrite/client";
 import { OAuthProvider } from "appwrite";
 
@@ -132,8 +133,17 @@ export default function SignUpPage() {
                 className="w-full gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating account..." : "Create Account"}
-                <ArrowRight className="h-4 w-4" />
+                {isLoading ? (
+                  <>
+                    <Spinner size="sm" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
 

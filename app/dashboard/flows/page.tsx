@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useFlows } from "@/lib/hooks/useFlows";
 import { Badge } from "@/components/ui/badge";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function FlowsListPage() {
   const { workspace } = useAuth();
@@ -35,16 +36,7 @@ export default function FlowsListPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Flows</h1>
-            <p className="text-muted-foreground mt-2">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoading text="Loading flows..." />;
   }
 
   if (error) {

@@ -25,6 +25,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { PageLoading } from "@/components/ui/loading";
 
 interface DashboardStats {
   totalFlows: number;
@@ -101,88 +102,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-8 animate-pulse">
-        {/* Header Skeleton */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-9 w-40" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-transparent" />
-              <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-5 w-5 rounded" />
-              </CardHeader>
-              <CardContent className="relative">
-                <Skeleton className="h-8 w-20 mb-2" />
-                <Skeleton className="h-3 w-32" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Flows and Events Grid */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {[1, 2].map((i) => (
-            <Card key={i} className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-transparent" />
-              <CardHeader className="relative">
-                <Skeleton className="h-6 w-32 mb-2" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent className="relative space-y-4">
-                {[1, 2, 3].map((j) => (
-                  <div
-                    key={j}
-                    className="flex items-center justify-between p-4 rounded-lg border"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <Skeleton className="h-3 w-3 rounded-full" />
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-8 w-16" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-transparent" />
-          <CardHeader className="relative">
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-4 w-56" />
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center gap-3 p-6 rounded-lg border"
-                >
-                  <Skeleton className="h-12 w-12 rounded-lg" />
-                  <Skeleton className="h-5 w-28" />
-                  <Skeleton className="h-3 w-36" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <PageLoading text="Loading dashboard..." />;
   }
 
   if (error) {
