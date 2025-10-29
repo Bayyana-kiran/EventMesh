@@ -16,7 +16,6 @@ import {
   CheckCircle,
   XCircle,
   ArrowRight,
-  RefreshCw,
   Zap,
 } from "lucide-react";
 import { GitBranch, TrendingUp, Activity } from "lucide-react";

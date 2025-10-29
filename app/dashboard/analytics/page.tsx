@@ -84,6 +84,10 @@ export default function AnalyticsPage() {
 
       const response = await fetch(`/api/analytics?${params}`);
       const result = await response.json();
+      console.log("Analytics API response:", result);
+      if (result?.kpis) {
+        console.log("Avg Response Time:", result.kpis.avgResponseTime);
+      }
 
       if (result.success) {
         setData(result);
@@ -149,87 +153,117 @@ export default function AnalyticsPage() {
   ).map(([name, value]) => ({ name, value }));
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground mt-2">
-          Track performance and insights
-        </p>
+    <div className="space-y-8">
+      {/* Page header with gradient */}
+      <div className="relative">
+        <div className="absolute -top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Analytics
+              </h1>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <Zap className="h-3 w-3" />
+                <span>Live</span>
+              </div>
+            </div>
+            <p className="text-muted-foreground text-base md:text-lg mt-2">
+              Deep insights into your event flows and system performance
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
+      {/* Stats cards with gradient effects */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-yellow-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Events
-            </CardDescription>
-            <CardTitle className="text-3xl">
+            </CardTitle>
+            <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Activity className="h-5 w-5 text-yellow-500" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
               {data?.kpis.totalEvents || 0}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">All time</div>
+            </div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-green-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Success Rate
-            </CardDescription>
-            <CardTitle className="text-3xl">
+            </CardTitle>
+            <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
               {data?.kpis.successRate}%
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-primary flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
+            </div>
+            <p className="text-xs text-muted-foreground">
               {data?.kpis.successRate}% of executions
-            </div>
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Avg Response Time</CardDescription>
-            <CardTitle className="text-3xl">
-              {data?.kpis.avgResponseTime}ms
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg Response Time
             </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">
-              Average execution time
+            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Activity className="h-5 w-5 text-blue-500" />
             </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
+              {data?.kpis.avgResponseTime}ms
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Average execution time
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Active Flows</CardDescription>
-            <CardTitle className="text-3xl">{data?.kpis.activeFlows}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">
-              Currently active
+        <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="relative flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Flows
+            </CardTitle>
+            <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Activity className="h-5 w-5 text-purple-500" />
             </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold mb-1">
+              {data?.kpis.activeFlows}
+            </div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Modern charts and tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="flows">By Flow</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <Card>
+          <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-20 pointer-events-none z-0" />
             <CardHeader>
               <CardTitle>Event Volume</CardTitle>
               <CardDescription>
@@ -263,7 +297,8 @@ export default function AnalyticsPage() {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+            <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-20 pointer-events-none z-0" />
               <CardHeader>
                 <CardTitle>Success vs Failures</CardTitle>
                 <CardDescription>Event execution outcomes</CardDescription>
@@ -299,7 +334,8 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-20 pointer-events-none z-0" />
               <CardHeader>
                 <CardTitle>Response Time Distribution</CardTitle>
                 <CardDescription>Performance metrics</CardDescription>
@@ -326,7 +362,8 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="flows" className="space-y-4">
-          <Card>
+          <Card className="relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-20 pointer-events-none z-0" />
             <CardHeader>
               <CardTitle>Flow Performance</CardTitle>
               <CardDescription>Events processed by each flow</CardDescription>
@@ -348,64 +385,6 @@ export default function AnalyticsPage() {
                   <Bar dataKey="events" fill={COLORS.primary} name="Events" />
                 </BarChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Flow Execution Metrics</CardTitle>
-              <CardDescription>
-                Success rate and average duration by flow
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(data?.flowPerformance || []).map((flow) => (
-                  <div
-                    key={flow.flowId}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{flow.flowName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {flow.events} events processed
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex gap-4">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {flow.successRate}%
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Success
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {Math.round(flow.avgDuration)}ms
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Avg Duration
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {(!data?.flowPerformance ||
-                  data.flowPerformance.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No flow data yet</p>
-                    <p className="text-xs mt-1">
-                      Create flows and send events to see metrics
-                    </p>
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

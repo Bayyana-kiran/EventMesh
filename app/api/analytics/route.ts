@@ -48,7 +48,7 @@ export async function GET(request: Request) {
           (e: any) => e.workspace_id === workspaceId
         )
       : eventsResponse.documents;
-    
+
     const flowIds = new Set(flows.map((f: any) => f.$id));
     const executions = workspaceId
       ? executionsResponse.documents.filter((e: any) =>
@@ -71,20 +71,46 @@ export async function GET(request: Request) {
         : "0.0";
 
     // Calculate average response time
-    const completedWithDuration = executions.filter(
-      (e: any) =>
-        (e.status === "success" || e.status === "completed") &&
-        (e.duration || e.duration === 0)
-    );
-    const avgResponseTime =
-      completedWithDuration.length > 0
-        ? Math.round(
-            completedWithDuration.reduce(
-              (sum: number, e: any) => sum + (e.duration || 0),
-              0
-            ) / completedWithDuration.length
-          )
-        : 0;
+    // --- Use dashboard's avgLatency logic for avgResponseTime ---
+    const executionsWithDuration = executions
+      .filter((e: any) => e.status === "success" || e.status === "completed")
+      .map((e: any) => ({
+        ...e,
+        _rawDuration: e.duration ?? e.duration_ms ?? e.durationMs,
+        _duration: Number(e.duration ?? e.duration_ms ?? e.durationMs ?? NaN),
+        _completedAt: e.completed_at || e.$updatedAt || e.$createdAt || null,
+      }))
+      .map((e: any) => {
+        if (!Number.isFinite(e._duration)) {
+          if (e.started_at && e.completed_at) {
+            const started = new Date(e.started_at).getTime();
+            const completed = new Date(e.completed_at).getTime();
+            const computed =
+              Number.isFinite(started) && Number.isFinite(completed)
+                ? Math.max(0, Math.round(completed - started))
+                : NaN;
+            return { ...e, _duration: computed };
+          }
+        }
+        return e;
+      })
+      .filter((e: any) => Number.isFinite(e._duration));
+
+    const recentExecutions = executionsWithDuration
+      .sort((a: any, b: any) => {
+        const ta = a._completedAt ? new Date(a._completedAt).getTime() : 0;
+        const tb = b._completedAt ? new Date(b._completedAt).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 50);
+
+    let avgResponseTime = 0;
+    if (recentExecutions.length > 0) {
+      const totalDuration = recentExecutions.reduce((sum: number, e: any) => {
+        return sum + Number(e._duration ?? 0);
+      }, 0);
+      avgResponseTime = Math.round(totalDuration / recentExecutions.length);
+    }
 
     const activeFlows = flows.filter((f: any) => f.status === "active").length;
 
@@ -156,14 +182,16 @@ export async function GET(request: Request) {
       .sort((a, b) => b.events - a.events);
 
     // Response time distribution (bucketing)
-    const responseTimes = completedWithDuration.map(
-      (e: any) => e.duration || 0
+    const responseTimes = executionsWithDuration.map((e: any) =>
+      Number(e._duration ?? 0)
     );
     const distribution = {
-      "0-100ms": responseTimes.filter((t) => t < 100).length,
-      "100-300ms": responseTimes.filter((t) => t >= 100 && t < 300).length,
-      "300-500ms": responseTimes.filter((t) => t >= 300 && t < 500).length,
-      "500ms+": responseTimes.filter((t) => t >= 500).length,
+      "0-100ms": responseTimes.filter((t: number) => t < 100).length,
+      "100-300ms": responseTimes.filter((t: number) => t >= 100 && t < 300)
+        .length,
+      "300-500ms": responseTimes.filter((t: number) => t >= 300 && t < 500)
+        .length,
+      "500ms+": responseTimes.filter((t: number) => t >= 500).length,
     };
 
     return NextResponse.json({
