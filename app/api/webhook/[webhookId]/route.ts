@@ -5,6 +5,7 @@ import { databases } from "@/lib/appwrite/server";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
 import { ID } from "node-appwrite";
 import { FlowExecutionEngine } from "@/lib/execution-engine";
+import { validateSchema } from "@/lib/utils";
 
 /**
  * Execute flow asynchronously in the background
@@ -118,12 +119,29 @@ async function executeFlowAsync(
     // Calculate duration in ms
     const durationMs = Math.round(Date.now() - startTime);
 
+    // Convert execution steps to node executions format
+    const nodeExecutions = result.steps.map((step) => ({
+      node_id: step.nodeId,
+      status: step.status,
+      input: step.input || {},
+      output: step.output || {},
+      error: step.error,
+      duration_ms:
+        step.completedAt && step.startedAt
+          ? Math.round(
+              new Date(step.completedAt).getTime() -
+                new Date(step.startedAt).getTime()
+            )
+          : 0,
+    }));
+
     // Update execution with results
     if (result.success) {
       await safeUpdateExecution(executionId, {
         status: "completed",
         completed_at: new Date().toISOString(),
         duration: durationMs,
+        node_executions: JSON.stringify(nodeExecutions),
       });
 
       // Update event status
@@ -140,6 +158,7 @@ async function executeFlowAsync(
         status: "failed",
         completed_at: new Date().toISOString(),
         duration: durationMs,
+        node_executions: JSON.stringify(nodeExecutions),
       });
 
       // Update event status
@@ -159,10 +178,21 @@ async function executeFlowAsync(
     try {
       const durationMs =
         Date.now() - (typeof startTime === "number" ? startTime : Date.now());
+
+      // Try to get any partial execution steps if available
+      let nodeExecutions: any[] = [];
+      try {
+        // If we have a flow and execution context, we could potentially get partial steps
+        // For now, we'll leave this empty as the execution failed before completion
+      } catch {
+        // Ignore errors when trying to get partial steps
+      }
+
       await safeUpdateExecution(executionId, {
         status: "failed",
         completed_at: new Date().toISOString(),
         duration: Math.round(durationMs),
+        node_executions: JSON.stringify(nodeExecutions),
       });
     } catch (updateError) {
       console.error("Failed to update execution status:", updateError);
@@ -209,6 +239,28 @@ export async function POST(
     }
 
     console.log("✅ Found flow:", flow.name);
+
+    // Validate payload against schema if defined in source node
+    const nodes = JSON.parse(flow.nodes || "[]");
+    const sourceNode = nodes.find((node: any) => node.type === "source");
+
+    if (sourceNode?.data?.config?.schema) {
+      console.log("🔍 Validating payload against schema");
+      const validation = validateSchema(payload, sourceNode.data.config.schema);
+
+      if (!validation.success) {
+        console.error("❌ Schema validation failed:", validation.error);
+        return NextResponse.json(
+          {
+            error: "Invalid payload",
+            message: `Payload validation failed: ${validation.error}`,
+            details: validation.error,
+          },
+          { status: 400 }
+        );
+      }
+      console.log("✅ Payload validation passed");
+    }
 
     // Check if flow is active
     if (flow.status !== "active") {

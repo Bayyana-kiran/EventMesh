@@ -32,15 +32,24 @@ export async function GET(request: NextRequest) {
       queries
     );
 
+    // Parse node_executions from string to array for each execution
+    const executions = executionsResponse.documents.map((execution) => ({
+      ...execution,
+      node_executions: execution.node_executions
+        ? JSON.parse(execution.node_executions as string)
+        : [],
+    }));
+
     console.log(`✅ Found ${executionsResponse.documents.length} executions`);
 
     return NextResponse.json({
       success: true,
-      executions: executionsResponse.documents,
+      executions: executions,
       total: executionsResponse.total,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Failed to fetch executions:", error);
     return NextResponse.json(
       {

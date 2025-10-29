@@ -8,7 +8,12 @@ export type NodeType = "source" | "transform" | "destination";
 export type FlowStatus = "active" | "paused" | "draft";
 export type EventStatus = "pending" | "processing" | "completed" | "failed";
 export type ExecutionStatus = "running" | "success" | "failed";
-export type DestinationType = "slack" | "discord" | "webhook" | "email";
+export type DestinationType =
+  | "slack"
+  | "discord"
+  | "webhook"
+  | "email"
+  | "test";
 export type TransformType = "javascript" | "ai" | "passthrough";
 
 // ============================================================================
@@ -50,6 +55,7 @@ export interface SourceConfig {
   type: "webhook";
   webhook_path?: string;
   api_key_id?: string;
+  schema?: Record<string, unknown>; // JSON Schema for payload validation
 }
 
 export interface TransformConfig {
@@ -89,7 +95,7 @@ export interface Execution extends Models.Document {
   started_at: string;
   completed_at?: string;
   duration_ms?: number;
-  node_executions: NodeExecution[];
+  node_executions: NodeExecution[]; // Stored as JSON string in DB, parsed to array in app
   metrics: {
     total_nodes: number;
     successful_nodes: number;

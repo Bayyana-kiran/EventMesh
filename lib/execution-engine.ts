@@ -331,6 +331,8 @@ export class FlowExecutionEngine {
       return this.sendToSlack(node, data);
     } else if (destinationType === "discord") {
       return this.sendToDiscord(node, data);
+    } else if (destinationType === "test") {
+      return this.sendToTest(node, data);
     } else {
       console.warn("⚠️ Unknown destination type, skipping");
       return { skipped: true, reason: "Unknown destination type" };
@@ -495,5 +497,27 @@ export class FlowExecutionEngine {
       console.error("❌ Discord delivery failed:", error);
       throw new Error(`Discord delivery failed: ${errorMessage}`);
     }
+  }
+
+  /**
+   * Send data to test destination (logs data for testing)
+   */
+  private async sendToTest(
+    node: FlowNode,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    console.log("🧪 Test destination - logging data:");
+    console.log("📊 Test Data:", JSON.stringify(data, null, 2));
+
+    // Return structured data that will be stored in the execution
+    return {
+      success: true,
+      destination: "test",
+      logged: true,
+      data: data,
+      timestamp: new Date().toISOString(),
+      node_id: node.id,
+      message: "Data logged successfully for testing",
+    };
   }
 }

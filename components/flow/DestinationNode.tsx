@@ -2,12 +2,12 @@
 
 import { memo } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
-import { Send, MessageSquare, Mail, Webhook } from "lucide-react";
+import { Send, MessageSquare, Mail, Webhook, TestTube } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type DestinationNodeData = {
   label: string;
-  type: "slack" | "discord" | "email" | "webhook";
+  type: "slack" | "discord" | "email" | "webhook" | "test";
   config?: Record<string, unknown>;
 };
 
@@ -16,6 +16,7 @@ const iconMap = {
   discord: MessageSquare,
   email: Mail,
   webhook: Webhook,
+  test: TestTube,
 };
 
 function DestinationNode({ data, selected }: NodeProps) {

@@ -222,6 +222,7 @@ return {
                   <SelectItem value="webhook">Webhook</SelectItem>
                   <SelectItem value="slack">Slack</SelectItem>
                   <SelectItem value="discord">Discord</SelectItem>
+                  <SelectItem value="test">Test (Log Data)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -282,6 +283,30 @@ return {
                   Data will be sent as JSON POST request
                 </p>
                 {/* Test endpoint removed: use a real webhook URL (e.g. /api/webhook/{webhook_id}) */}
+              </div>
+            )}
+
+            {config.type === "test" && (
+              <div className="space-y-2">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      Test Destination
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    This destination logs all incoming data to the console for
+                    testing purposes. No external service is contacted. Perfect
+                    for debugging and validating your flow.
+                  </p>
+                  <div className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                    <strong>Logged data will appear in:</strong> Server console
+                    logs
+                  </div>
+                </div>
               </div>
             )}
           </div>
