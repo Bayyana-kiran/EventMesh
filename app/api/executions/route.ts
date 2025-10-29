@@ -12,30 +12,44 @@ export async function GET(request: NextRequest) {
     const workspaceId = searchParams.get("workspaceId");
     const limit = parseInt(searchParams.get("limit") || "10");
 
-    console.log("📋 Fetching executions with filters:", {
-      flowId,
-      eventId,
-      workspaceId,
-      limit,
-    });
+    const baseQueries = [Query.orderDesc("$createdAt"), Query.limit(limit)];
+    const queries = [...baseQueries];
+    if (flowId) queries.push(Query.equal("flow_id", flowId));
+    if (eventId) queries.push(Query.equal("event_id", eventId));
+    if (workspaceId) queries.push(Query.equal("workspace_id", workspaceId));
 
-    const queries = [Query.orderDesc("$createdAt"), Query.limit(limit)];
+    let executionsResponse;
+    try {
+      executionsResponse = await databases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        COLLECTION_IDS.EXECUTIONS,
+        queries
+      );
+    } catch (err: any) {
+      const resp = err?.response ?? err?.message ?? "";
+      const respStr = String(resp);
+      if (
+        workspaceId &&
+        (respStr.includes("Attribute not found") ||
+          respStr.includes("workspace_id") ||
+          respStr.includes("Unknown attribute"))
+      ) {
+        console.info(
+          "⚠️ Executions collection does not support 'workspace_id' filter; retrying without it."
+        );
+        const queriesNoWorkspace = [...baseQueries];
+        if (flowId) queriesNoWorkspace.push(Query.equal("flow_id", flowId));
+        if (eventId) queriesNoWorkspace.push(Query.equal("event_id", eventId));
 
-    if (flowId) {
-      queries.push(Query.equal("flow_id", flowId));
+        executionsResponse = await databases.listDocuments(
+          APPWRITE_DATABASE_ID,
+          COLLECTION_IDS.EXECUTIONS,
+          queriesNoWorkspace
+        );
+      } else {
+        throw err;
+      }
     }
-    if (eventId) {
-      queries.push(Query.equal("event_id", eventId));
-    }
-    if (workspaceId) {
-      queries.push(Query.equal("workspace_id", workspaceId));
-    }
-
-    const executionsResponse = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      COLLECTION_IDS.EXECUTIONS,
-      queries
-    );
 
     // Parse node_executions from string to array for each execution
     const executions = executionsResponse.documents.map((execution) => ({

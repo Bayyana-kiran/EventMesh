@@ -36,7 +36,7 @@ async function executeFlowAsync(
       );
     } catch (updateErr: any) {
       // Normalize response text (try to extract message from JSON if present)
-      let respRaw = updateErr?.response ?? updateErr?.message ?? "";
+      const respRaw = updateErr?.response ?? updateErr?.message ?? "";
       let respStr = String(respRaw);
 
       try {
@@ -180,7 +180,7 @@ async function executeFlowAsync(
         Date.now() - (typeof startTime === "number" ? startTime : Date.now());
 
       // Try to get any partial execution steps if available
-      let nodeExecutions: any[] = [];
+      const nodeExecutions: any[] = [];
       try {
         // If we have a flow and execution context, we could potentially get partial steps
         // For now, we'll leave this empty as the execution failed before completion

@@ -87,13 +87,17 @@ export default function EventsPage() {
             );
             if (executionsRes.ok) {
               const executionsData = await executionsRes.json();
-              const executions = executionsData.executions || [];
+              const executions: Array<{
+                execution_time?: number;
+                status?: string;
+              }> = executionsData.executions || [];
+
               const executionTimes = executions
                 .filter(
-                  (exec: any) =>
-                    exec.execution_time && exec.status === "completed"
+                  (exec) => exec.execution_time && exec.status === "completed"
                 )
-                .map((exec: any) => exec.execution_time);
+                .map((exec) => exec.execution_time as number);
+
               if (executionTimes.length > 0) {
                 avgResponseTime = Math.round(
                   executionTimes.reduce(
@@ -131,13 +135,15 @@ export default function EventsPage() {
             if (flowsRes.ok) {
               const flowsData = await flowsRes.json();
               // flowsData.documents is the Appwrite response shape
-              const flowsList = Array.isArray(flowsData.documents)
+              const flowsList: Array<{ status?: string }> = Array.isArray(
+                flowsData.documents
+              )
                 ? flowsData.documents
                 : Array.isArray(flowsData)
                 ? flowsData
                 : [];
               const activeFlowsCount = flowsList.filter(
-                (f: any) => f.status === "active"
+                (f) => f.status === "active"
               ).length;
               setStats((prev) => ({ ...prev, activeFlows: activeFlowsCount }));
             }
@@ -325,7 +331,7 @@ export default function EventsPage() {
           ) : (
             <>
               <div className="space-y-3">
-                {events.map((event) => {
+                {events.map((event: Event) => {
                   const statusClasses = cn(
                     "inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mb-1",
                     event.status === "completed"

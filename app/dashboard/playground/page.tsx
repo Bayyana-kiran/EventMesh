@@ -22,7 +22,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import FlowCanvas from "@/components/flow/FlowCanvas";
 import { Flow } from "@/lib/types";

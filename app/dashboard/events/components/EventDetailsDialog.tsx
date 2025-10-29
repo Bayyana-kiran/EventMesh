@@ -42,22 +42,33 @@ export function EventDetailsDialog({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     if (eventId && open) {
-      setLoading(true);
-      fetch(`/api/events/${eventId}`)
-        .then((res) => res.json())
-        .then((data) => {
+      // use an inner async function to avoid calling setState synchronously in the effect body
+      const fetchData = async () => {
+        if (!mounted) return;
+        setLoading(true);
+        try {
+          const res = await fetch(`/api/events/${eventId}`);
+          const data = await res.json();
+          if (!mounted) return;
           setEvent(data);
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Failed to fetch event details:", error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      };
+
+      fetchData();
     } else {
       setEvent(null);
     }
+
+    return () => {
+      mounted = false;
+    };
   }, [eventId, open]);
 
   if (!event && !loading) {

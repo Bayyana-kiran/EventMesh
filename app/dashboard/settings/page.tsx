@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Key, Bell, Trash2, Copy, Check, AlertTriangle } from "lucide-react";
+import { Bell, Trash2, Copy, Check, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -37,7 +37,7 @@ interface APIKey {
 export default function SettingsPage() {
   const router = useRouter();
   const { workspace, workspaces, deleteWorkspace } = useAuth();
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [_apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -196,7 +196,6 @@ export default function SettingsPage() {
       <Tabs defaultValue="workspace" className="space-y-4">
         <TabsList>
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
-          <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
@@ -293,73 +292,6 @@ export default function SettingsPage() {
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Workspace
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="api" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                API Keys
-              </CardTitle>
-              <CardDescription>
-                Manage your API authentication keys
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {apiKeys.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Key className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No API keys yet</p>
-                  <p className="text-xs mt-1">
-                    Generate an API key to get started
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {apiKeys.map((key) => (
-                    <div
-                      key={key.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div>
-                        <div className="font-medium">{key.name}</div>
-                        <div className="text-sm text-muted-foreground font-mono">
-                          {key.key.slice(0, 20)}••••••••••••
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Created: {new Date(key.created).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(key.key, key.id)}
-                        >
-                          {copiedKey === key.id ? (
-                            <>
-                              <Check className="h-3 w-3 mr-1" />
-                              Copied
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3 mr-1" />
-                              Copy
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <Button className="w-full" disabled>
-                Generate New Key (Coming Soon)
               </Button>
             </CardContent>
           </Card>
