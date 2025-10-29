@@ -168,6 +168,10 @@ export async function GET(request: Request) {
           id: event.$id,
           source: event.source || "Webhook",
           type: event.event_type || "webhook.received",
+          flowName:
+            flows.find((f: any) => f.$id === event.flow_id)?.name || null,
+          createdAtIso: event.$createdAt,
+          shortId: String(event.$id).slice(0, 8),
           status: execution?.status || "pending",
           time: timeAgo,
           flowId: event.flow_id,

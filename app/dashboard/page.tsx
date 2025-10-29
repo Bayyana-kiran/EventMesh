@@ -53,6 +53,9 @@ interface RecentEvent {
   status: string;
   time: string;
   flowId: string;
+  flowName?: string | null;
+  createdAtIso?: string | null;
+  shortId?: string | null;
 }
 
 export default function DashboardPage() {
@@ -378,9 +381,10 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 recentEvents.map((event) => (
-                  <div
+                  <Link
                     key={event.id}
-                    className="group relative overflow-hidden p-4 rounded-lg border border-border/50 hover:border-yellow-500/50 transition-all duration-200 hover:shadow-md hover:shadow-yellow-500/5"
+                    href={`/dashboard/events/${event.id}`}
+                    className="group block relative overflow-hidden p-4 rounded-lg border border-border/50 hover:border-yellow-500/50 transition-all duration-200 hover:shadow-md hover:shadow-yellow-500/5"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-center justify-between">
@@ -388,11 +392,17 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Zap className="h-4 w-4 text-yellow-500" />
                           <p className="font-semibold truncate">
-                            {event.source}
+                            {/* prefer flow name as headline when available */}
+                            {event.flowName || event.source || event.type}
                           </p>
+                          <span className="text-xs text-muted-foreground ml-2 truncate">
+                            {event.type}
+                          </span>
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
-                          {event.type}
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            ID: {event.shortId}
+                          </span>
                         </p>
                       </div>
                       <div className="text-right">
@@ -422,9 +432,14 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground">
                           {event.time}
                         </p>
+                        {event.createdAtIso && (
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {new Date(event.createdAtIso).toLocaleString()}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
@@ -466,7 +481,7 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/dashboard/destinations/new">
+            <Link href="/dashboard/destinations">
               <div className="group relative overflow-hidden h-full p-6 rounded-lg border border-border/50 hover:border-green-500/50 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-green-500/10">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex flex-col items-center text-center gap-3">
