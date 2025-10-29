@@ -10,7 +10,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus, GitBranch, MoreVertical } from "lucide-react";
-import { useUpdateFlow } from "@/lib/hooks/useFlows";
+import { useUpdateFlow, useCreateFlow } from "@/lib/hooks/useFlows";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import { Flow, FlowNode } from "@/lib/types";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -23,7 +33,71 @@ export default function FlowsListPage() {
   const { data: flowsData, isLoading, error } = useFlows(workspace?.$id);
   const flows = flowsData || [];
   const updateFlow = useUpdateFlow();
+  const createFlow = useCreateFlow();
   const { toast } = useToast();
+  const [intent, setIntent] = useState("");
+  const [contextText, setContextText] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState<any | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const onGenerate = async () => {
+    setAiError(null);
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/ai/generate-flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intent, context: contextText }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAiError(data?.error || "AI generation failed");
+      } else {
+        setResult(data.flow);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setAiError(msg);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const onCreateFromAI = () => {
+    if (!result) {
+      setAiError("No generated flow to create");
+      return;
+    }
+
+    const name = intent.trim().slice(0, 60) || "AI generated flow";
+    createFlow.mutate(
+      {
+        name,
+        description: result.explanation || "",
+        workspaceId: workspace?.$id || "",
+        nodes: result.nodes,
+        edges: result.edges,
+      },
+      {
+        onSuccess: (newFlow) => {
+          toast({ title: "Flow created", description: `${newFlow.name}` });
+          // reset dialog state
+          setResult(null);
+          setIntent("");
+          setContextText("");
+        },
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          toast({
+            title: "Error",
+            description: message || "Failed to create flow",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
 
   // Helper to normalize nodes which may be stored as an array or a JSON string in the DB
   const parseNodes = (
@@ -73,12 +147,92 @@ export default function FlowsListPage() {
             Manage your event routing flows
           </p>
         </div>
-        <Link href="/dashboard/flows/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Flow
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* AI create flow dialog trigger */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" className="gap-2">
+                <GitBranch className="h-4 w-4" />
+                Create with AI
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create flow with AI</DialogTitle>
+                <DialogDescription>
+                  Describe what you want the flow to do and the assistant will
+                  generate a flow draft.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-2">
+                <label className="text-sm">Intent</label>
+                <textarea
+                  id="ai-intent"
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  placeholder="e.g. Forward GitHub push events to Slack channel #builds"
+                  value={intent}
+                  onChange={(e) => setIntent(e.target.value)}
+                />
+
+                <label className="text-sm">Context (optional)</label>
+                <textarea
+                  id="ai-context"
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  placeholder="Optional context for the assistant"
+                  value={contextText}
+                  onChange={(e) => setContextText(e.target.value)}
+                />
+
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIntent("");
+                      setContextText("");
+                      setResult(null);
+                      setAiError(null);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    onClick={onGenerate}
+                    disabled={generating || intent.trim().length === 0}
+                  >
+                    {generating ? "Generating…" : "Generate"}
+                  </Button>
+                </div>
+
+                {aiError && (
+                  <div className="text-sm text-destructive">{aiError}</div>
+                )}
+
+                {result && (
+                  <div className="mt-2">
+                    <div className="text-sm font-medium mb-1">Preview</div>
+                    <pre className="max-h-64 overflow-auto rounded bg-slate-950/5 p-2 text-xs">
+                      {JSON.stringify(result, null, 2)}
+                    </pre>
+                    <div className="flex items-center justify-end gap-2 mt-2">
+                      <Button variant="outline" onClick={() => setResult(null)}>
+                        Discard
+                      </Button>
+                      <Button onClick={onCreateFromAI}>Create Flow</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Link href="/dashboard/flows/new">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Flow
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Flows Grid */}
