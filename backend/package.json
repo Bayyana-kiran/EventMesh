@@ -1,0 +1,25 @@
+{
+  "name": "eventmesh-notifier-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "express": "^5.1.0",
+    "node-appwrite": "^10.0.0",
+    "nodemailer": "^6.9.4"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.6",
+    "@types/express": "^5.0.5",
+    "@types/node": "^20.5.6",
+    "@types/nodemailer": "^7.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.6.4"
+  }
+}
