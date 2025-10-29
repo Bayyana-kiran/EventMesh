@@ -42,7 +42,7 @@ export default async function EventDetailPage({
         flowName = flow.name || flowName;
         // prefer webhook_url from the flow if available
         flowWebhook = flow.webhook_url || flowWebhook;
-      } catch (err) {
+      } catch {
         // ignore missing flow
       }
     }
@@ -121,13 +121,14 @@ export default async function EventDetailPage({
         </Card>
       </div>
     );
-  } catch (error) {
+  } catch {
     // If not found or any other error, show a 404-like message
     return (
       <div className="py-24 text-center">
         <h1 className="text-2xl font-bold">Event not found</h1>
         <p className="text-muted-foreground mt-2">
-          We couldn't find an event with id "{id}".
+          We could not find an event with id{" "}
+          <code className="font-mono">{id}</code>.
         </p>
         <div className="mt-6">
           <Link href="/dashboard/events">

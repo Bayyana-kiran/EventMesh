@@ -10,6 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus, GitBranch, MoreVertical } from "lucide-react";
+import { useUpdateFlow } from "@/lib/hooks/useFlows";
+import { Flow, FlowNode } from "@/lib/types";
+import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useFlows } from "@/lib/hooks/useFlows";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +22,25 @@ export default function FlowsListPage() {
   const { workspace } = useAuth();
   const { data: flowsData, isLoading, error } = useFlows(workspace?.$id);
   const flows = flowsData || [];
+  const updateFlow = useUpdateFlow();
+  const { toast } = useToast();
+
+  // Helper to normalize nodes which may be stored as an array or a JSON string in the DB
+  const parseNodes = (
+    nodes: Flow["nodes"] | string | undefined
+  ): FlowNode[] => {
+    if (Array.isArray(nodes)) return nodes as FlowNode[];
+    if (!nodes) return [];
+    if (typeof nodes === "string") {
+      try {
+        const parsed = JSON.parse(nodes);
+        return Array.isArray(parsed) ? (parsed as FlowNode[]) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
 
   // debug logs removed before commit
 
@@ -60,7 +82,7 @@ export default function FlowsListPage() {
       </div>
 
       {/* Flows Grid */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {flows.map((flow) => (
           <Card
             key={flow.$id}
@@ -69,8 +91,8 @@ export default function FlowsListPage() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <GitBranch className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 flex items-center justify-center">
+                    <GitBranch className="h-5 w-5 text-purple-500" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">{flow.name}</CardTitle>
@@ -111,12 +133,73 @@ export default function FlowsListPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Link href={`/dashboard/flows/${flow.$id}`} className="flex-1">
-                  <Button variant="outline" className="w-full">
-                    Configure Flow
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    Nodes:{" "}
+                    <span className="font-medium">
+                      {parseNodes(flow.nodes).length}
+                    </span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Destinations:{" "}
+                    <span className="font-medium">
+                      {
+                        parseNodes(flow.nodes).filter(
+                          (n: FlowNode) => n.type === "destination"
+                        ).length
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-64">
+                  <Link
+                    href={`/dashboard/flows/${flow.$id}`}
+                    className="flex-1"
+                  >
+                    <Button variant="outline" className="w-full">
+                      Configure
+                    </Button>
+                  </Link>
+                  <Button
+                    variant={
+                      flow.status === "active" ? "destructive" : "default"
+                    }
+                    onClick={() => {
+                      updateFlow.mutate(
+                        {
+                          flowId: flow.$id,
+                          data: {
+                            status:
+                              flow.status === "active" ? "paused" : "active",
+                          },
+                        },
+                        {
+                          onSuccess: () => {
+                            toast({
+                              title: "Updated",
+                              description: `Flow ${flow.name} is now ${
+                                flow.status === "active" ? "paused" : "active"
+                              }`,
+                            });
+                          },
+                          onError: (err: unknown) => {
+                            const message =
+                              err instanceof Error ? err.message : String(err);
+                            toast({
+                              title: "Error",
+                              description: message || "Failed to update flow",
+                              variant: "destructive",
+                            });
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    {flow.status === "active" ? "Pause" : "Activate"}
                   </Button>
-                </Link>
+                </div>
               </div>
             </CardContent>
           </Card>
