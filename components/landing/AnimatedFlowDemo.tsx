@@ -267,15 +267,14 @@ export function AnimatedFlowDemo() {
         <div className="flex items-center gap-2 mb-3">
           <Code2 className="w-4 h-4 text-secondary" />
           <span className="text-xs md:text-sm font-bold text-foreground">
-            Sample Event
+            Event Structure
           </span>
         </div>
         <pre className="text-xs text-muted-foreground font-mono overflow-hidden leading-relaxed">
           <code>{`{
-  "event": "user.signup",
-  "user_id": "usr_123",
-  "email": "user@example.com",
-  "timestamp": "2025-10-28T12:00:00Z"
+  "event": "user.action",
+  "data": { ... },
+  "timestamp": "ISO string"
 }`}</code>
         </pre>
       </div>

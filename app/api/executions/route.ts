@@ -9,11 +9,13 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const flowId = searchParams.get("flowId");
     const eventId = searchParams.get("eventId");
+    const workspaceId = searchParams.get("workspaceId");
     const limit = parseInt(searchParams.get("limit") || "10");
 
     console.log("📋 Fetching executions with filters:", {
       flowId,
       eventId,
+      workspaceId,
       limit,
     });
 
@@ -24,6 +26,9 @@ export async function GET(request: NextRequest) {
     }
     if (eventId) {
       queries.push(Query.equal("event_id", eventId));
+    }
+    if (workspaceId) {
+      queries.push(Query.equal("workspace_id", workspaceId));
     }
 
     const executionsResponse = await databases.listDocuments(

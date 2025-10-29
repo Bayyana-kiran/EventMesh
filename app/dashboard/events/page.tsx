@@ -78,6 +78,38 @@ export default function EventsPage() {
             (e: Event) => e.status === "pending" || e.status === "processing"
           );
           const uniqueFlows = new Set(data.events.map((e: Event) => e.flow_id));
+
+          // Calculate average response time from executions
+          let avgResponseTime = 0;
+          try {
+            const executionsRes = await fetch(
+              `/api/executions?workspaceId=${workspace.$id}&limit=100`
+            );
+            if (executionsRes.ok) {
+              const executionsData = await executionsRes.json();
+              const executions = executionsData.executions || [];
+              const executionTimes = executions
+                .filter(
+                  (exec: any) =>
+                    exec.execution_time && exec.status === "completed"
+                )
+                .map((exec: any) => exec.execution_time);
+              if (executionTimes.length > 0) {
+                avgResponseTime = Math.round(
+                  executionTimes.reduce(
+                    (sum: number, time: number) => sum + time,
+                    0
+                  ) / executionTimes.length
+                );
+              }
+            }
+          } catch (execErr) {
+            console.warn(
+              "[EventsPage] Failed to fetch executions for avg time:",
+              execErr
+            );
+          }
+
           setStats({
             total: data.total,
             today: todayEvents.length,
@@ -87,7 +119,7 @@ export default function EventsPage() {
                     (successfulEvents.length / data.events.length) * 100
                   )
                 : 0,
-            avgResponseTime: 245, // TODO: Calculate from actual execution data
+            avgResponseTime,
             activeFlows: uniqueFlows.size,
           });
           setTotalPages(Math.max(1, Math.ceil((data.total || 0) / pageSize)));
