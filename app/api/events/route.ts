@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const flowId = searchParams.get("flowId");
     const status = searchParams.get("status");
+    const workspaceId = searchParams.get("workspaceId");
     const limit = parseInt(searchParams.get("limit") || "50");
 
     console.log("📋 Fetching events with filters:", { flowId, status, limit });
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       queries.push(Query.equal("status", status));
+    }
+
+    if (workspaceId) {
+      queries.push(Query.equal("workspace_id", workspaceId));
     }
 
     // Fetch events
@@ -66,7 +71,8 @@ export async function GET(request: NextRequest) {
       total: eventsResponse.total,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An error occurred";
     console.error("❌ Error fetching events:", error);
     return NextResponse.json(
       {

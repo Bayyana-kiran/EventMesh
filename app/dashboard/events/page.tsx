@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/lib/auth/AuthContext";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Calendar,
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  Zap,
-} from "lucide-react";
+import { Calendar, CheckCircle, XCircle, ArrowRight, Zap } from "lucide-react";
 import { GitBranch, TrendingUp, Activity } from "lucide-react";
 import { PageLoading } from "@/components/ui/loading";
 
@@ -34,6 +29,7 @@ interface Event {
 }
 
 export default function EventsPage() {
+  const { workspace } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -49,31 +45,39 @@ export default function EventsPage() {
 
   const fetchEvents = useCallback(
     async (pageNum = page) => {
+      console.log("[EventsPage] Current workspace:", workspace);
+      if (!workspace) {
+        setEvents([]);
+        setStats({
+          total: 0,
+          today: 0,
+          successRate: 0,
+          avgResponseTime: 0,
+          activeFlows: 0,
+        });
+        setTotalPages(1);
+        return;
+      }
       try {
         setLoading(true);
-        const response = await fetch(
-          `/api/events?limit=${pageSize}&page=${pageNum}`
-        );
+        const apiUrl = `/api/events?limit=${pageSize}&page=${pageNum}&workspaceId=${workspace.$id}`;
+        console.log("[EventsPage] Fetching:", apiUrl);
+        const response = await fetch(apiUrl);
         const data = await response.json();
 
         if (data.success) {
           setEvents(data.events);
-
-          // Calculate stats
+          // ...existing code...
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-
           const todayEvents = data.events.filter((e: Event) => {
             const eventDate = new Date(e.$createdAt);
             return eventDate >= today;
           });
-
           const successfulEvents = data.events.filter(
             (e: Event) => e.status === "pending" || e.status === "processing"
           );
-
           const uniqueFlows = new Set(data.events.map((e: Event) => e.flow_id));
-
           setStats({
             total: data.total,
             today: todayEvents.length,
@@ -87,6 +91,30 @@ export default function EventsPage() {
             activeFlows: uniqueFlows.size,
           });
           setTotalPages(Math.max(1, Math.ceil((data.total || 0) / pageSize)));
+          // Also fetch flows in this workspace to get an accurate activeFlows count
+          try {
+            const flowsRes = await fetch(
+              `/api/flows?workspaceId=${workspace.$id}`
+            );
+            if (flowsRes.ok) {
+              const flowsData = await flowsRes.json();
+              // flowsData.documents is the Appwrite response shape
+              const flowsList = Array.isArray(flowsData.documents)
+                ? flowsData.documents
+                : Array.isArray(flowsData)
+                ? flowsData
+                : [];
+              const activeFlowsCount = flowsList.filter(
+                (f: any) => f.status === "active"
+              ).length;
+              setStats((prev) => ({ ...prev, activeFlows: activeFlowsCount }));
+            }
+          } catch (flowErr) {
+            console.warn(
+              "[EventsPage] Failed to fetch flows for active count:",
+              flowErr
+            );
+          }
         }
       } catch (error) {
         console.error("Failed to fetch events:", error);
@@ -94,12 +122,37 @@ export default function EventsPage() {
         setLoading(false);
       }
     },
-    [page]
+    [page, workspace]
   );
 
   useEffect(() => {
     fetchEvents(page);
-  }, [fetchEvents, page]);
+  }, [fetchEvents, page, workspace]);
+
+  // Poll periodically so new flows/activations appear without a full page reload
+  useEffect(() => {
+    if (!workspace) return;
+    const interval = setInterval(() => {
+      fetchEvents(page);
+    }, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace, page]);
+
+  // Reset state when workspace changes
+  useEffect(() => {
+    console.log("[EventsPage] Workspace changed, clearing state.");
+    setEvents([]);
+    setStats({
+      total: 0,
+      today: 0,
+      successRate: 0,
+      avgResponseTime: 0,
+      activeFlows: 0,
+    });
+    setPage(1);
+    setTotalPages(1);
+  }, [workspace]);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);

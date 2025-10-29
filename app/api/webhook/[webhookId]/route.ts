@@ -18,19 +18,83 @@ async function executeFlowAsync(
   // make startTime visible to both try and catch blocks
   let startTime = 0;
 
+  // Helper to update execution documents safely. Some Appwrite deployments
+  // validate document structure and will reject unknown attributes (for
+  // example `duration`). This helper will retry the update after removing
+  // any attributes that Appwrite reports as unknown.
+  const safeUpdateExecution = async (
+    id: string,
+    data: Record<string, unknown>
+  ) => {
+    try {
+      return await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        COLLECTION_IDS.EXECUTIONS,
+        id,
+        data
+      );
+    } catch (updateErr: any) {
+      // Normalize response text (try to extract message from JSON if present)
+      let respRaw = updateErr?.response ?? updateErr?.message ?? "";
+      let respStr = String(respRaw);
+
+      try {
+        // If response is a JSON string, parse and extract the message field
+        const parsed =
+          typeof respRaw === "string" ? JSON.parse(respRaw) : respRaw;
+        if (parsed && typeof parsed === "object" && parsed.message) {
+          respStr = String(parsed.message);
+        }
+      } catch {
+        // ignore JSON parse errors and keep respStr as-is
+      }
+
+      const unknownAttrs: string[] = [];
+
+      // Try multiple regex forms to catch both escaped and unescaped quote styles
+      const re1 = /Unknown attribute:\s*\"([^\"]+)\"/g; // matches Unknown attribute: "duration"
+      const re2 = /Unknown attribute:\s*"([^\"]+)"/g; // matches Unknown attribute: "duration"
+      const re3 = /Unknown attribute:\s*([^,\s\}\"]+)/g; // fallback: Unknown attribute: duration
+
+      let m;
+      while ((m = re1.exec(respStr))) unknownAttrs.push(m[1]);
+      while ((m = re2.exec(respStr))) unknownAttrs.push(m[1]);
+      while ((m = re3.exec(respStr))) unknownAttrs.push(m[1]);
+
+      // Deduplicate
+      const uniqueAttrs = Array.from(new Set(unknownAttrs));
+
+      if (uniqueAttrs.length > 0) {
+        const sanitized: Record<string, unknown> = { ...data };
+        for (const a of uniqueAttrs) {
+          if (a in sanitized) delete (sanitized as any)[a];
+        }
+
+        try {
+          return await databases.updateDocument(
+            APPWRITE_DATABASE_ID,
+            COLLECTION_IDS.EXECUTIONS,
+            id,
+            sanitized
+          );
+        } catch (err2) {
+          console.error("Failed to update execution after sanitizing:", err2);
+          throw err2;
+        }
+      }
+
+      throw updateErr;
+    }
+  };
+
   try {
     console.log("🎯 Starting async flow execution:", executionId);
 
     // measure execution duration locally (will be saved on the execution doc)
     startTime = Date.now();
 
-    // Update execution status to running
-    await databases.updateDocument(
-      APPWRITE_DATABASE_ID,
-      COLLECTION_IDS.EXECUTIONS,
-      executionId,
-      { status: "running" }
-    );
+    // Update execution status to running (use safe helper to avoid schema errors)
+    await safeUpdateExecution(executionId, { status: "running" });
 
     // Parse nodes and edges from flow
     const nodes = JSON.parse(flow.nodes || "[]");
@@ -56,16 +120,11 @@ async function executeFlowAsync(
 
     // Update execution with results
     if (result.success) {
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTION_IDS.EXECUTIONS,
-        executionId,
-        {
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          duration: durationMs,
-        }
-      );
+      await safeUpdateExecution(executionId, {
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        duration: durationMs,
+      });
 
       // Update event status
       await databases.updateDocument(
@@ -77,16 +136,11 @@ async function executeFlowAsync(
 
       console.log("✅ Flow execution completed successfully:", executionId);
     } else {
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTION_IDS.EXECUTIONS,
-        executionId,
-        {
-          status: "failed",
-          completed_at: new Date().toISOString(),
-          duration: durationMs,
-        }
-      );
+      await safeUpdateExecution(executionId, {
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        duration: durationMs,
+      });
 
       // Update event status
       await databases.updateDocument(
@@ -105,16 +159,11 @@ async function executeFlowAsync(
     try {
       const durationMs =
         Date.now() - (typeof startTime === "number" ? startTime : Date.now());
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTION_IDS.EXECUTIONS,
-        executionId,
-        {
-          status: "failed",
-          completed_at: new Date().toISOString(),
-          duration: Math.round(durationMs),
-        }
-      );
+      await safeUpdateExecution(executionId, {
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        duration: Math.round(durationMs),
+      });
     } catch (updateError) {
       console.error("Failed to update execution status:", updateError);
     }
@@ -189,25 +238,82 @@ export async function POST(
 
     console.log("📝 Event created:", event.$id);
 
-    // Create an execution record
-    const execution = await databases.createDocument(
-      APPWRITE_DATABASE_ID,
-      COLLECTION_IDS.EXECUTIONS,
-      ID.unique(),
-      {
-        workspace_id: flow.workspace_id,
-        flow_id: flow.$id,
-        event_id: event.$id,
-        status: "pending",
-        started_at: new Date().toISOString(),
+    const executionId = ID.unique();
+    let execution: any = null;
+
+    // Build execution payload (do NOT include workspace_id at create time to
+    // avoid Appwrite collection schema rejections). If the flow has a
+    // workspace_id we will try to add it afterwards with an update.
+    const executionPayload: Record<string, unknown> = {
+      flow_id: flow.$id,
+      event_id: event.$id,
+      status: "pending",
+      started_at: new Date().toISOString(),
+    };
+
+    try {
+      // Create execution without workspace_id to avoid a 400 from Appwrite when
+      // the collection doesn't include that attribute.
+      execution = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        COLLECTION_IDS.EXECUTIONS,
+        executionId,
+        executionPayload
+      );
+
+      console.log("🚀 Execution created:", execution.$id);
+
+      // If the flow has workspace_id, try to add it via update. This keeps the
+      // initial create fast and avoids create-time schema validation errors.
+      if (flow?.workspace_id) {
+        try {
+          await databases.updateDocument(
+            APPWRITE_DATABASE_ID,
+            COLLECTION_IDS.EXECUTIONS,
+            execution.$id,
+            { workspace_id: flow.workspace_id }
+          );
+
+          console.log("ℹ️ workspace_id added to execution document");
+        } catch (updateErr: any) {
+          // If the collection schema doesn't accept workspace_id Appwrite will
+          // return a document_invalid_structure error mentioning the unknown
+          // attribute. Silently acknowledge that case to avoid noisy logs and
+          // keep helpful info for other errors.
+          const resp = updateErr?.response || updateErr?.message || "";
+          const respStr = String(resp);
+
+          if (
+            respStr.includes("Unknown attribute") ||
+            respStr.includes("workspace_id")
+          ) {
+            console.info(
+              "ℹ️ Executions collection does not accept 'workspace_id'; skipping add."
+            );
+          } else {
+            console.info(
+              "ℹ️ Could not add workspace_id to execution document:",
+              updateErr?.message ?? updateErr
+            );
+          }
+        }
       }
-    );
+    } catch (execErr: any) {
+      // Something prevented creating the execution doc entirely. Log as an
+      // error but continue — the flow will still run using the generated
+      // `executionId` so that downstream records correlate.
+      console.error("❌ Failed to create execution record:", execErr);
+    }
 
-    console.log("🚀 Execution created:", execution.$id);
-
-    // Execute the flow asynchronously
-    // We don't await this so the webhook responds quickly
-    executeFlowAsync(flow, execution.$id, event.$id, payload).catch((error) => {
+    // Execute the flow asynchronously. Use the created execution id if
+    // available, otherwise fallback to the generated executionId.
+    // We don't await this so the webhook responds quickly.
+    executeFlowAsync(
+      flow,
+      execution?.$id ?? executionId,
+      event.$id,
+      payload
+    ).catch((error) => {
       console.error("❌ Async flow execution failed:", error);
     });
 
@@ -215,7 +321,7 @@ export async function POST(
       success: true,
       message: "Webhook received successfully",
       event_id: event.$id,
-      execution_id: execution.$id,
+      execution_id: execution?.$id ?? executionId,
       flow_id: flow.$id,
       flow_name: flow.name,
     });

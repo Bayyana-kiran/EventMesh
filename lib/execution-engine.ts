@@ -362,7 +362,21 @@ export class FlowExecutionEngine {
       const responseText = await response.text();
 
       if (!response.ok) {
-        throw new Error(`Webhook returned ${response.status}: ${responseText}`);
+        // Log the full response for debugging (status + body) but don't throw.
+        // Returning a failure object allows the engine to record the node
+        // result without aborting the entire flow when a remote endpoint
+        // returns 4xx/5xx. If you prefer to treat some statuses as fatal,
+        // add retry logic or explicit throwing for those cases.
+        console.warn(
+          `⚠️ Webhook returned ${response.status} for ${webhookUrl}: ${responseText}`
+        );
+
+        return {
+          success: false,
+          status: response.status,
+          response: responseText,
+          url: webhookUrl,
+        };
       }
 
       console.log("✅ Webhook delivery successful");
