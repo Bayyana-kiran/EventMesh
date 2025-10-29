@@ -10,7 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus, GitBranch, MoreVertical } from "lucide-react";
-import { useUpdateFlow, useCreateFlow } from "@/lib/hooks/useFlows";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
+import {
+  useUpdateFlow,
+  useCreateFlow,
+  useDeleteFlow,
+} from "@/lib/hooks/useFlows";
 import {
   Dialog,
   DialogTrigger,
@@ -18,10 +24,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Flow, FlowNode } from "@/lib/types";
+import {
+  Flow,
+  FlowNode,
+  FlowEdge,
+  AIFlowGenerationResponse,
+} from "@/lib/types";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useFlows } from "@/lib/hooks/useFlows";
@@ -34,11 +44,13 @@ export default function FlowsListPage() {
   const flows = flowsData || [];
   const updateFlow = useUpdateFlow();
   const createFlow = useCreateFlow();
+  const deleteFlow = useDeleteFlow();
   const { toast } = useToast();
+  const router = useRouter();
   const [intent, setIntent] = useState("");
   const [contextText, setContextText] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<any | null>(null);
+  const [result, setResult] = useState<AIFlowGenerationResponse | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const onGenerate = async () => {
@@ -76,8 +88,8 @@ export default function FlowsListPage() {
         name,
         description: result.explanation || "",
         workspaceId: workspace?.$id || "",
-        nodes: result.nodes,
-        edges: result.edges,
+        nodes: result.nodes as unknown as Record<string, unknown>[],
+        edges: result.edges as unknown as Record<string, unknown>[],
       },
       {
         onSuccess: (newFlow) => {
@@ -109,6 +121,23 @@ export default function FlowsListPage() {
       try {
         const parsed = JSON.parse(nodes);
         return Array.isArray(parsed) ? (parsed as FlowNode[]) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  // Helper to normalize edges which may be stored as an array or a JSON string in the DB
+  const parseEdges = (
+    edges: Flow["edges"] | string | undefined
+  ): FlowEdge[] => {
+    if (Array.isArray(edges)) return edges as FlowEdge[];
+    if (!edges) return [];
+    if (typeof edges === "string") {
+      try {
+        const parsed = JSON.parse(edges);
+        return Array.isArray(parsed) ? (parsed as FlowEdge[]) : [];
       } catch {
         return [];
       }
@@ -261,9 +290,104 @@ export default function FlowsListPage() {
                   >
                     {flow.status}
                   </Badge>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+
+                  {/* Overflow menu for per-flow actions */}
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenu.Trigger>
+
+                    <DropdownMenu.Content
+                      sideOffset={6}
+                      align="end"
+                      className="z-50 min-w-[160px] rounded-md border bg-popover p-1 shadow-md"
+                    >
+                      <DropdownMenu.Item
+                        className="px-2 py-2 text-sm cursor-pointer"
+                        onSelect={() =>
+                          router.push(`/dashboard/flows/${flow.$id}`)
+                        }
+                      >
+                        Configure
+                      </DropdownMenu.Item>
+
+                      <DropdownMenu.Item
+                        className="px-2 py-2 text-sm cursor-pointer"
+                        onSelect={() => {
+                          // Simple duplicate: create a new flow with same nodes/edges
+                          const name = `Copy of ${flow.name}`;
+                          createFlow.mutate(
+                            {
+                              name: name,
+                              description: flow.description || "",
+                              workspaceId: workspace?.$id || "",
+                              // parseNodes returns FlowNode[]; cast to API input shape
+                              nodes: parseNodes(
+                                flow.nodes
+                              ) as unknown as Record<string, unknown>[],
+                              edges: parseEdges(
+                                flow.edges
+                              ) as unknown as Record<string, unknown>[],
+                            },
+                            {
+                              onSuccess: (newFlow) => {
+                                toast({
+                                  title: "Flow duplicated",
+                                  description: `${newFlow.name}`,
+                                });
+                              },
+                              onError: (err: unknown) => {
+                                const message =
+                                  err instanceof Error
+                                    ? err.message
+                                    : String(err);
+                                toast({
+                                  title: "Error",
+                                  description:
+                                    message || "Failed to duplicate flow",
+                                  variant: "destructive",
+                                });
+                              },
+                            }
+                          );
+                        }}
+                      >
+                        Duplicate
+                      </DropdownMenu.Item>
+
+                      <DropdownMenu.Separator className="my-1 h-px bg-border" />
+
+                      <DropdownMenu.Item
+                        className="px-2 py-2 text-sm text-destructive cursor-pointer"
+                        onSelect={() => {
+                          if (!confirm(`Delete flow '${flow.name}'?`)) return;
+                          deleteFlow.mutate(flow.$id, {
+                            onSuccess: () => {
+                              toast({
+                                title: "Deleted",
+                                description: `${flow.name} deleted`,
+                              });
+                            },
+                            onError: (err: unknown) => {
+                              const message =
+                                err instanceof Error
+                                  ? err.message
+                                  : String(err);
+                              toast({
+                                title: "Error",
+                                description: message || "Failed to delete flow",
+                                variant: "destructive",
+                              });
+                            },
+                          });
+                        }}
+                      >
+                        Delete
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Root>
                 </div>
               </div>
             </CardHeader>

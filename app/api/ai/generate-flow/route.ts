@@ -4,19 +4,25 @@ type ReqBody = {
   intent: string;
   context?: string;
 };
-function validateFlowShape(obj: any) {
+
+function validateFlowShape(obj: unknown) {
   if (!obj || typeof obj !== "object") return false;
-  if (!Array.isArray(obj.nodes)) return false;
-  if (!Array.isArray(obj.edges)) return false;
+  const rec = obj as Record<string, unknown>;
+  if (!Array.isArray(rec.nodes)) return false;
+  if (!Array.isArray(rec.edges)) return false;
   // basic node shape checks
-  for (const n of obj.nodes) {
-    if (typeof n.id !== "string") return false;
-    if (typeof n.type !== "string") return false;
+  for (const n of rec.nodes as Array<unknown>) {
+    if (typeof n !== "object" || n === null) return false;
+    const nn = n as Record<string, unknown>;
+    if (typeof nn.id !== "string") return false;
+    if (typeof nn.type !== "string") return false;
   }
-  for (const e of obj.edges) {
-    if (typeof e.id !== "string") return false;
-    if (typeof e.source !== "string") return false;
-    if (typeof e.target !== "string") return false;
+  for (const e of rec.edges as Array<unknown>) {
+    if (typeof e !== "object" || e === null) return false;
+    const ee = e as Record<string, unknown>;
+    if (typeof ee.id !== "string") return false;
+    if (typeof ee.source !== "string") return false;
+    if (typeof ee.target !== "string") return false;
   }
   return true;
 }
@@ -52,15 +58,23 @@ async function callGemini(intent: string, context?: string) {
     throw new Error(`Gemini API error: ${resp.status} ${txt}`);
   }
 
-  const payload = await resp.json();
+  const payload = (await resp.json()) as Record<string, unknown> | undefined;
 
   // Gather candidate text by joining all parts (defensive)
-  const candidates = payload?.candidates as Array<any> | undefined;
+  const candidates = Array.isArray(payload?.candidates)
+    ? (payload?.candidates as Array<unknown>)
+    : undefined;
   let text: string | null = null;
   if (Array.isArray(candidates) && candidates.length > 0) {
-    const parts = candidates[0]?.content?.parts;
+    const first = candidates[0] as Record<string, unknown> | undefined;
+    const content = first?.content as Record<string, unknown> | undefined;
+    const parts = Array.isArray(content?.parts)
+      ? (content?.parts as Array<unknown>)
+      : undefined;
     if (Array.isArray(parts)) {
-      text = parts.map((p: any) => String(p?.text ?? "")).join("\n");
+      text = parts
+        .map((p) => String((p as Record<string, unknown>)?.text ?? ""))
+        .join("\n");
     }
   }
 
@@ -107,7 +121,7 @@ export async function POST(request: Request) {
       // Try direct parse
       try {
         return { parsed: JSON.parse(s), debugAttempts };
-      } catch (e) {
+      } catch {
         // continue to heuristics
       }
 
@@ -119,7 +133,7 @@ export async function POST(request: Request) {
         try {
           debugAttempts.push(m);
           return { parsed: JSON.parse(m), debugAttempts };
-        } catch (e) {
+        } catch {
           // try next
         }
       }
@@ -131,7 +145,7 @@ export async function POST(request: Request) {
         try {
           debugAttempts.push(sub);
           return { parsed: JSON.parse(sub), debugAttempts };
-        } catch (e) {
+        } catch {
           // give up
         }
       }
@@ -139,8 +153,10 @@ export async function POST(request: Request) {
       return { parsed: null, debugAttempts };
     }
 
-    let parsed: any = null;
-    let debug: any = { attempts: [] };
+    let parsed: unknown = null;
+    const debug: {
+      attempts: Array<{ source: string; tries: string[]; raw?: unknown }>;
+    } = { attempts: [] };
 
     // Try parsing attempt1
     const result1 = sanitizeAndParse(attempt1.text ?? null);

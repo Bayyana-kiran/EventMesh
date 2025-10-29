@@ -31,6 +31,7 @@ import TransformNode from "./TransformNode";
 import DestinationNode from "./DestinationNode";
 import { NodeConfigPanel } from "./NodeConfigPanel";
 import { useToast } from "@/lib/hooks/use-toast";
+import { AIFlowGenerationResponse, FlowNode } from "@/lib/types";
 
 const nodeTypes: NodeTypes = {
   source: SourceNode,
@@ -71,7 +72,9 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
   const [isActivating, setIsActivating] = useState(false);
   const [aiIntent, setAiIntent] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiResult, setAiResult] = useState<any | null>(null);
+  const [aiResult, setAiResult] = useState<AIFlowGenerationResponse | null>(
+    null
+  );
   const [aiError, setAiError] = useState<string | null>(null);
 
   // Load initial flow data
@@ -397,12 +400,19 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
 
                           const newNodes: Node<FlowNodeData>[] = (
                             aiResult.nodes || []
-                          ).map((n: any, idx: number) => {
-                            const originalId = n.id ?? idx;
+                          ).map((n: FlowNode, idx: number) => {
+                            const rawNode = n as unknown as Record<
+                              string,
+                              unknown
+                            >;
+                            const originalId = rawNode.id ?? idx;
                             const newId = `${aiPrefix}${String(originalId)}`;
                             idMap.set(String(originalId), newId);
 
-                            const rawPos = n.position || {};
+                            const rawPos = (rawNode.position ?? {}) as Record<
+                              string,
+                              unknown
+                            >;
                             const pos = {
                               x: Number(
                                 rawPos.x ??
@@ -417,46 +427,60 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
                             };
 
                             // Determine node kind
-                            const kind = (
-                              n.type ||
-                              n.nodeType ||
-                              "transform"
-                            ).toString();
+                            const kind = String(
+                              rawNode.type ?? rawNode.nodeType ?? "transform"
+                            );
 
                             // Normalize data per node component expectations
-                            let data: any = {};
+                            const dataRec = (rawNode.data ?? {}) as Record<
+                              string,
+                              unknown
+                            >;
+                            const data: Record<string, unknown> = {};
                             if (kind === "source") {
-                              data.label =
-                                n.data?.label || n.label || "Webhook Source";
-                              data.webhookUrl =
-                                n.data?.webhookUrl ||
-                                n.data?.webhook_url ||
-                                n.webhook_url ||
-                                initialFlow?.webhook_url ||
+                              const p = data as Partial<FlowNodeData>;
+                              p.label =
+                                (dataRec.label as string) ||
+                                (rawNode.label as string) ||
+                                "Webhook Source";
+                              p.webhookUrl =
+                                (dataRec.webhookUrl as string) ||
+                                (dataRec.webhook_url as string) ||
+                                (rawNode.webhook_url as string) ||
+                                (initialFlow?.webhook_url as string) ||
                                 "";
+                              Object.assign(data, p);
                             } else if (kind === "transform") {
                               const ttype =
-                                n.data?.type ||
-                                n.type ||
-                                n.transformType ||
+                                (dataRec.type as string) ||
+                                (rawNode.type as string) ||
+                                (rawNode.transformType as string) ||
                                 "javascript";
-                              data.label =
-                                n.data?.label ||
-                                n.label ||
+                              const p = data as Partial<FlowNodeData>;
+                              p.label =
+                                (dataRec.label as string) ||
+                                (rawNode.label as string) ||
                                 (ttype === "ai" ? "AI Transform" : "Transform");
-                              data.type = ttype === "ai" ? "ai" : "javascript";
-                              data.code =
-                                n.data?.code || n.code || n.script || "";
+                              p.type = ttype === "ai" ? "ai" : "javascript";
+                              (p as Partial<FlowNodeData>).code =
+                                (dataRec.code as string) ||
+                                (rawNode.code as string) ||
+                                (rawNode.script as string) ||
+                                "";
+                              Object.assign(data, p);
                             } else if (kind === "destination") {
-                              const dtype = (
-                                n.data?.type ||
-                                n.destinationType ||
-                                n.type ||
-                                "webhook"
-                              ).toString();
-                              data.label =
-                                n.data?.label || n.label || "Destination";
-                              data.type = [
+                              const dtype = String(
+                                dataRec.type ??
+                                  rawNode.destinationType ??
+                                  rawNode.type ??
+                                  "webhook"
+                              );
+                              const p = data as Partial<FlowNodeData>;
+                              p.label =
+                                (dataRec.label as string) ||
+                                (rawNode.label as string) ||
+                                "Destination";
+                              p.type = [
                                 "slack",
                                 "discord",
                                 "email",
@@ -464,10 +488,17 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
                               ].includes(dtype)
                                 ? dtype
                                 : "webhook";
-                              data.config = n.data?.config || n.config || {};
+                              (p as Partial<FlowNodeData>).config =
+                                dataRec.config ?? rawNode.config ?? {};
+                              Object.assign(data, p);
                             } else {
                               // fallback generic
-                              data = n.data || { label: n.label || "AI Node" };
+                              Object.assign(
+                                data,
+                                dataRec || {
+                                  label: (rawNode.label as string) || "AI Node",
+                                }
+                              );
                             }
 
                             const nodeType =
@@ -481,50 +512,61 @@ export default function FlowCanvas({ flowId, initialFlow }: FlowCanvasProps) {
                               id: newId,
                               type: nodeType,
                               position: pos,
-                              data,
+                              data: data as FlowNodeData,
                             } as Node<FlowNodeData>;
                           });
 
                           // Map edges, only include those whose endpoints exist after mapping
-                          const newEdges: FlowEdge[] = (aiResult.edges || [])
-                            .map((e: any, idx: number) => {
-                              const srcKey = String(e.source ?? "");
-                              const tgtKey = String(e.target ?? "");
-                              let source =
-                                idMap.get(srcKey) ||
-                                idMap.get(String(Number(srcKey))) ||
-                                null;
-                              let target =
-                                idMap.get(tgtKey) ||
-                                idMap.get(String(Number(tgtKey))) ||
-                                null;
+                          const rawEdges = (aiResult.edges ||
+                            []) as unknown as Array<Record<string, unknown>>;
 
-                              // Heuristic: if AI provided human-readable labels instead of ids, try to resolve by label
-                              if (!source) {
-                                const match = newNodes.find(
-                                  (nn) =>
-                                    (nn.data as any)?.label === e.source ||
-                                    (nn.data as any)?.label === String(e.source)
-                                );
-                                if (match) source = match.id;
+                          const newEdges: FlowEdge[] = rawEdges
+                            .map(
+                              (rawE: Record<string, unknown>, idx: number) => {
+                                const srcKey = String(rawE.source ?? "");
+                                const tgtKey = String(rawE.target ?? "");
+                                let source =
+                                  idMap.get(srcKey) ||
+                                  idMap.get(String(Number(srcKey))) ||
+                                  null;
+                                let target =
+                                  idMap.get(tgtKey) ||
+                                  idMap.get(String(Number(tgtKey))) ||
+                                  null;
+
+                                // Heuristic: if AI provided human-readable labels instead of ids, try to resolve by label
+                                if (!source) {
+                                  const match = newNodes.find(
+                                    (nn) =>
+                                      (nn.data as Record<string, unknown>)
+                                        ?.label === rawE.source ||
+                                      (nn.data as Record<string, unknown>)
+                                        ?.label === String(rawE.source)
+                                  );
+                                  if (match) source = match.id;
+                                }
+                                if (!target) {
+                                  const match = newNodes.find(
+                                    (nn) =>
+                                      (nn.data as Record<string, unknown>)
+                                        ?.label === rawE.target ||
+                                      (nn.data as Record<string, unknown>)
+                                        ?.label === String(rawE.target)
+                                  );
+                                  if (match) target = match.id;
+                                }
+                                if (!source || !target) return null;
+                                const newId = `${aiPrefix}${String(
+                                  rawE.id ?? idx
+                                )}`;
+                                return {
+                                  id: newId,
+                                  source,
+                                  target,
+                                  animated: true,
+                                } as FlowEdge;
                               }
-                              if (!target) {
-                                const match = newNodes.find(
-                                  (nn) =>
-                                    (nn.data as any)?.label === e.target ||
-                                    (nn.data as any)?.label === String(e.target)
-                                );
-                                if (match) target = match.id;
-                              }
-                              if (!source || !target) return null;
-                              const newId = `${aiPrefix}${e.id ?? idx}`;
-                              return {
-                                id: newId,
-                                source,
-                                target,
-                                animated: true,
-                              } as FlowEdge;
-                            })
+                            )
                             .filter(Boolean) as FlowEdge[];
 
                           if (newNodes.length === 0) {
