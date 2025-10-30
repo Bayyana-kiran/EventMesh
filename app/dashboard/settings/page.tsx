@@ -20,7 +20,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Bell, Trash2, Copy, Check, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Copy,
+  Check,
+  AlertTriangle,
+  Bell,
+  Mail,
+  Monitor,
+  Webhook,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -38,6 +48,29 @@ export default function SettingsPage() {
   const router = useRouter();
   const { workspace, workspaces, deleteWorkspace } = useAuth();
   const [_apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [workspaceSettings, setWorkspaceSettings] = useState<any>({});
+  const [notifications, setNotifications] = useState<any>({
+    email: {
+      enabled: false,
+      recipients: [],
+      flowFailures: false,
+      eventVolume: { enabled: false, threshold: 1000 },
+      weeklyReports: false,
+    },
+    inApp: {
+      enabled: true,
+      flowFailures: true,
+      eventVolume: { enabled: true, threshold: 1000 },
+      weeklyReports: true,
+    },
+    webhook: {
+      enabled: false,
+      url: "",
+      flowFailures: false,
+      eventVolume: { enabled: false, threshold: null },
+      weeklyReports: false,
+    },
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -61,6 +94,20 @@ export default function SettingsPage() {
 
       if (data.success) {
         setApiKeys(data.apiKeys || []);
+        // parse settings from workspace (may be JSON string)
+        let settingsObj: any = {};
+        try {
+          settingsObj = data.workspace?.settings
+            ? typeof data.workspace.settings === "string"
+              ? JSON.parse(data.workspace.settings)
+              : data.workspace.settings
+            : {};
+        } catch {
+          settingsObj = data.workspace?.settings || {};
+        }
+        setWorkspaceSettings(settingsObj);
+        if (settingsObj.notifications)
+          setNotifications(settingsObj.notifications);
       }
     } catch (err: unknown) {
       toast({
@@ -94,6 +141,11 @@ export default function SettingsPage() {
         body: JSON.stringify({
           workspaceId: workspace.$id,
           name: workspaceName,
+          // preserve other settings and merge notifications
+          settings: {
+            ...workspaceSettings,
+            notifications,
+          },
         }),
       });
 
@@ -112,6 +164,44 @@ export default function SettingsPage() {
       toast({
         title: "Error",
         description: (err as Error).message || "Failed to update settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!workspace) return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/workspace/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: workspace.$id,
+          settings: {
+            ...workspaceSettings,
+            notifications,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Notification settings updated",
+        });
+        // update local cache
+        setWorkspaceSettings((s: any) => ({ ...s, notifications }));
+      } else {
+        throw new Error(data.error || "Failed to save notifications");
+      }
+    } catch (err: unknown) {
+      toast({
+        title: "Error",
+        description: (err as Error).message || "Failed to save",
         variant: "destructive",
       });
     } finally {
@@ -297,55 +387,613 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notification Preferences
-              </CardTitle>
-              <CardDescription>
-                Configure how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Flow Failures</div>
-                  <div className="text-sm text-muted-foreground">
-                    Get notified when a flow execution fails
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
-                </Button>
-              </div>
+        <TabsContent value="notifications" className="space-y-6">
+          {/* Page header with gradient */}
+          <div className="relative">
+            {/* Subtle glow effect */}
+            <div className="absolute -top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">High Event Volume</div>
-                  <div className="text-sm text-muted-foreground">
-                    Alert when event volume exceeds threshold
-                  </div>
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  Notification Preferences
+                </h2>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <Bell className="h-3 w-3" />
+                  <span>Live</span>
                 </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
-                </Button>
               </div>
+              <p className="text-muted-foreground text-base">
+                Configure how you receive notifications about your event flows.
+              </p>
+            </div>
+          </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Weekly Reports</div>
-                  <div className="text-sm text-muted-foreground">
-                    Receive weekly analytics summary
+          {/* Notification channels grid */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Email Notifications */}
+            <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Mail className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold">Email</CardTitle>
+                    <CardDescription>
+                      Send notifications via email
+                    </CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" disabled>
-                  Coming Soon
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-purple-500/30 transition-colors">
+                  <div>
+                    <div className="font-medium">
+                      Enable Email Notifications
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Receive notifications by email
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!notifications.email?.enabled}
+                      onChange={(e) =>
+                        setNotifications((s: any) => ({
+                          ...s,
+                          email: { ...s.email, enabled: e.target.checked },
+                        }))
+                      }
+                    />
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                  </label>
+                </div>
+
+                {notifications.email?.enabled && (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    {/* Recipients */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Recipients</Label>
+                      <Input
+                        value={(notifications.email?.recipients || []).join(
+                          ", "
+                        )}
+                        onChange={(e) =>
+                          setNotifications((s: any) => ({
+                            ...s,
+                            email: {
+                              ...s.email,
+                              recipients: e.target.value
+                                .split(",")
+                                .map((t) => t.trim())
+                                .filter(Boolean),
+                            },
+                          }))
+                        }
+                        placeholder="user@example.com, admin@example.com"
+                        className="transition-all focus:border-purple-500/50"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Separate multiple emails with commas
+                      </p>
+                    </div>
+
+                    {/* Notification types */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">
+                        Notify me about:
+                      </Label>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-purple-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Flow Failures
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            When flows fail to execute
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.email?.flowFailures}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                email: {
+                                  ...s.email,
+                                  flowFailures: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-purple-500/30 transition-colors">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            High Event Volume
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            When events exceed threshold
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={
+                                notifications.email?.eventVolume?.threshold ??
+                                1000
+                              }
+                              onChange={(e) =>
+                                setNotifications((s: any) => ({
+                                  ...s,
+                                  email: {
+                                    ...s.email,
+                                    eventVolume: {
+                                      ...(s.email?.eventVolume || {}),
+                                      threshold: Number(e.target.value),
+                                    },
+                                  },
+                                }))
+                              }
+                              className="w-20 h-8 text-xs transition-all focus:border-purple-500/50"
+                              min="1"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              events/hour
+                            </span>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-3">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={
+                              !!notifications.email?.eventVolume?.enabled
+                            }
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                email: {
+                                  ...s.email,
+                                  eventVolume: {
+                                    ...(s.email?.eventVolume || {}),
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-purple-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Weekly Reports
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Analytics summary every week
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.email?.weeklyReports}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                email: {
+                                  ...s.email,
+                                  weeklyReports: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* In-App Notifications */}
+            <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-green-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Monitor className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold">In-App</CardTitle>
+                    <CardDescription>
+                      Show notifications in EventMesh
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-green-500/30 transition-colors">
+                  <div>
+                    <div className="font-medium">
+                      Enable In-App Notifications
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Show notifications in the dashboard
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!notifications.inApp?.enabled}
+                      onChange={(e) =>
+                        setNotifications((s: any) => ({
+                          ...s,
+                          inApp: { ...s.inApp, enabled: e.target.checked },
+                        }))
+                      }
+                    />
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  </label>
+                </div>
+
+                {notifications.inApp?.enabled && (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    {/* Notification types */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">
+                        Notify me about:
+                      </Label>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-green-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Flow Failures
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            When flows fail to execute
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.inApp?.flowFailures}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                inApp: {
+                                  ...s.inApp,
+                                  flowFailures: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-green-500/30 transition-colors">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            High Event Volume
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            When events exceed threshold
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={
+                                notifications.inApp?.eventVolume?.threshold ??
+                                1000
+                              }
+                              onChange={(e) =>
+                                setNotifications((s: any) => ({
+                                  ...s,
+                                  inApp: {
+                                    ...s.inApp,
+                                    eventVolume: {
+                                      ...(s.inApp?.eventVolume || {}),
+                                      threshold: Number(e.target.value),
+                                    },
+                                  },
+                                }))
+                              }
+                              className="w-20 h-8 text-xs transition-all focus:border-green-500/50"
+                              min="1"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              events/hour
+                            </span>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-3">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={
+                              !!notifications.inApp?.eventVolume?.enabled
+                            }
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                inApp: {
+                                  ...s.inApp,
+                                  eventVolume: {
+                                    ...(s.inApp?.eventVolume || {}),
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-green-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Weekly Reports
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Analytics summary every week
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.inApp?.weeklyReports}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                inApp: {
+                                  ...s.inApp,
+                                  weeklyReports: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Webhook Notifications */}
+            <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Webhook className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold">Webhook</CardTitle>
+                    <CardDescription>
+                      Forward notifications to external services
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-colors">
+                  <div>
+                    <div className="font-medium">
+                      Enable Webhook Notifications
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Send notifications to a webhook URL
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!notifications.webhook?.enabled}
+                      onChange={(e) =>
+                        setNotifications((s: any) => ({
+                          ...s,
+                          webhook: {
+                            ...s.webhook,
+                            enabled: e.target.checked,
+                          },
+                        }))
+                      }
+                    />
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  </label>
+                </div>
+
+                {notifications.webhook?.enabled && (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    {/* Webhook URL */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Webhook URL</Label>
+                      <Input
+                        value={notifications.webhook?.url || ""}
+                        onChange={(e) =>
+                          setNotifications((s: any) => ({
+                            ...s,
+                            webhook: { ...s.webhook, url: e.target.value },
+                          }))
+                        }
+                        placeholder="https://api.example.com/webhooks/notifications"
+                        className="transition-all focus:border-blue-500/50"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        We'll POST notification data to this URL
+                      </p>
+                    </div>
+
+                    {/* Notification types */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">
+                        Notify about:
+                      </Label>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Flow Failures
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            When flows fail to execute
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.webhook?.flowFailures}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                webhook: {
+                                  ...s.webhook,
+                                  flowFailures: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-colors">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            High Event Volume
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            When events exceed threshold
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={
+                                notifications.webhook?.eventVolume?.threshold ??
+                                1000
+                              }
+                              onChange={(e) =>
+                                setNotifications((s: any) => ({
+                                  ...s,
+                                  webhook: {
+                                    ...s.webhook,
+                                    eventVolume: {
+                                      ...(s.webhook?.eventVolume || {}),
+                                      threshold: Number(e.target.value),
+                                    },
+                                  },
+                                }))
+                              }
+                              className="w-20 h-8 text-xs transition-all focus:border-blue-500/50"
+                              min="1"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              events/hour
+                            </span>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-3">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={
+                              !!notifications.webhook?.eventVolume?.enabled
+                            }
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                webhook: {
+                                  ...s.webhook,
+                                  eventVolume: {
+                                    ...(s.webhook?.eventVolume || {}),
+                                    enabled: e.target.checked,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-colors">
+                        <div>
+                          <div className="font-medium text-sm">
+                            Weekly Reports
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Analytics summary every week
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={!!notifications.webhook?.weeklyReports}
+                            onChange={(e) =>
+                              setNotifications((s: any) => ({
+                                ...s,
+                                webhook: {
+                                  ...s.webhook,
+                                  weeklyReports: e.target.checked,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Save button */}
+          <div className="flex justify-end pt-6">
+            <Button
+              onClick={handleSaveNotifications}
+              disabled={saving}
+              className="gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+            >
+              {saving ? (
+                <>
+                  <Spinner className="h-4 w-4" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Save Notification Settings
+                </>
+              )}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
 

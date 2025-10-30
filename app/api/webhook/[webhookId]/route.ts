@@ -169,6 +169,23 @@ async function executeFlowAsync(
         { status: "failed" }
       );
 
+      // Notify about flow failure
+      try {
+        const notificationBackendUrl =
+          process.env.NOTIFICATION_BACKEND_URL || "http://localhost:8080";
+        await fetch(`${notificationBackendUrl}/notify/flow-failure`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            workspaceId: (flow as any).workspace_id,
+            flowName: (flow as any).name,
+            error: result.error || "Unknown error",
+          }),
+        });
+      } catch (notifyErr) {
+        console.error("Failed to send flow failure notification:", notifyErr);
+      }
+
       console.error("❌ Flow execution failed:", result.error);
     }
   } catch (error: unknown) {
@@ -238,10 +255,10 @@ export async function POST(
       return NextResponse.json({ error: "Flow not found" }, { status: 404 });
     }
 
-    console.log("✅ Found flow:", flow.name);
+    console.log("✅ Found flow:", (flow as any).name);
 
     // Validate payload against schema if defined in source node
-    const nodes = JSON.parse(flow.nodes || "[]");
+    const nodes = JSON.parse((flow as any).nodes || "[]");
     const sourceNode = nodes.find((node: any) => node.type === "source");
 
     if (sourceNode?.data?.config?.schema) {
@@ -263,10 +280,10 @@ export async function POST(
     }
 
     // Check if flow is active
-    if (flow.status !== "active") {
-      console.warn("⚠️ Flow is not active:", flow.status);
+    if ((flow as any).status !== "active") {
+      console.warn("⚠️ Flow is not active:", (flow as any).status);
       return NextResponse.json(
-        { error: "Flow is not active", status: flow.status },
+        { error: "Flow is not active", status: (flow as any).status },
         { status: 400 }
       );
     }
@@ -277,7 +294,7 @@ export async function POST(
       COLLECTION_IDS.EVENTS,
       ID.unique(),
       {
-        workspace_id: flow.workspace_id,
+        workspace_id: (flow as any).workspace_id,
         flow_id: flow.$id,
         source: "webhook",
         event_type: "webhook.received",
@@ -289,6 +306,19 @@ export async function POST(
     );
 
     console.log("📝 Event created:", event.$id);
+
+    // Check event volume in background
+    const notificationBackendUrl =
+      process.env.NOTIFICATION_BACKEND_URL || "http://localhost:8080";
+    fetch(`${notificationBackendUrl}/check-event-volume`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workspaceId: (flow as any).workspace_id,
+      }),
+    }).catch((err) => {
+      console.error("Failed to check event volume:", err);
+    });
 
     const executionId = ID.unique();
     let execution: any = null;
@@ -317,13 +347,13 @@ export async function POST(
 
       // If the flow has workspace_id, try to add it via update. This keeps the
       // initial create fast and avoids create-time schema validation errors.
-      if (flow?.workspace_id) {
+      if ((flow as any)?.workspace_id) {
         try {
           await databases.updateDocument(
             APPWRITE_DATABASE_ID,
             COLLECTION_IDS.EXECUTIONS,
             execution.$id,
-            { workspace_id: flow.workspace_id }
+            { workspace_id: (flow as any).workspace_id }
           );
 
           console.log("ℹ️ workspace_id added to execution document");
@@ -375,7 +405,7 @@ export async function POST(
       event_id: event.$id,
       execution_id: execution?.$id ?? executionId,
       flow_id: flow.$id,
-      flow_name: flow.name,
+      flow_name: (flow as any).name,
     });
   } catch (error: unknown) {
     const errorMessage =
@@ -416,9 +446,9 @@ export async function GET(
     return NextResponse.json({
       webhook_id: webhookId,
       flow_id: flow.$id,
-      flow_name: flow.name,
-      status: flow.status,
-      webhook_url: flow.webhook_url,
+      flow_name: (flow as any).name,
+      status: (flow as any).status,
+      webhook_url: (flow as any).webhook_url,
     });
   } catch (error: unknown) {
     const errorMessage =

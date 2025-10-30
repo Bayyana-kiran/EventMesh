@@ -21,6 +21,7 @@ export const COLLECTION_IDS = {
   DESTINATIONS: "destinations",
   API_KEYS: "api_keys",
   ANALYTICS: "analytics",
+  NOTIFICATIONS: "notifications",
 } as const;
 
 // Bucket IDs

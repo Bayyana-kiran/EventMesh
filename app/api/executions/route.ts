@@ -52,11 +52,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse node_executions from string to array for each execution
-    const executions = executionsResponse.documents.map((execution) => ({
+    const executions = executionsResponse.documents.map((execution: any) => ({
       ...execution,
-      node_executions: execution.node_executions
-        ? JSON.parse(execution.node_executions as string)
-        : [],
+      node_executions: JSON.parse(execution.node_executions || "[]"),
     }));
 
     console.log(`✅ Found ${executionsResponse.documents.length} executions`);
