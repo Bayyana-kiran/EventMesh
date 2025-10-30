@@ -1,4 +1,4 @@
-# EventMesh 🚀
+# EventMesh
 
 <div align="center">
 
@@ -19,7 +19,7 @@ Build complex webhook workflows with drag-and-drop simplicity, AI-powered transf
 
 ---
 
-## 🌟 What is EventMesh?
+## What is EventMesh?
 
 EventMesh is a **visual webhook routing platform** that makes event-driven architecture accessible to everyone. Instead of writing complex glue code, you **drag, drop, and connect** nodes to create powerful event processing pipelines.
 
@@ -27,11 +27,11 @@ EventMesh is a **visual webhook routing platform** that makes event-driven archi
 
 Traditional webhook management is painful:
 
-- 🔧 Complex integration code for every service
-- 🐛 No visibility into event flow
-- ⏱️ Time-consuming debugging
-- 🔁 Repetitive transformation logic
-- 📊 Limited monitoring and analytics
+- Complex integration code for every service
+- Limited visibility into event flow
+- Time-consuming debugging
+- Repetitive transformation logic
+- Limited monitoring and analytics
 
 # EventMesh
 
@@ -97,14 +97,14 @@ The system separates concerns into Client, Orchestration, Data, and External lay
 
 ```mermaid
 graph LR
-  UI[Client - Next.js App]
-  API[Server - Next.js API & Appwrite Functions]
-  Processor[Event Processor / Execution Engine]
-  DB[Appwrite Database]
-  Storage[Appwrite Storage]
-  Realtime[Appwrite Realtime]
-  AI[AI Services (OpenAI / Gemini)]
-  Dest[External Destinations (Slack, Webhook, Discord, Email)]
+  UI["Client - Next.js App"]
+  API["Server - Next.js API & Appwrite Functions"]
+  Processor["Event Processor / Execution Engine"]
+  DB["Appwrite Database"]
+  Storage["Appwrite Storage"]
+  Realtime["Appwrite Realtime"]
+  AI["AI Services - OpenAI / Gemini"]
+  Dest["External Destinations - Slack, Webhook, Discord, Email"]
 
   UI --> API
   API --> DB
@@ -115,11 +115,57 @@ graph LR
   Processor --> AI
   Processor --> Dest
   Processor --> Realtime
-  Dest -->|Delivery responses| Processor
-
-  classDef infra fill:#f5f5f5,stroke:#333,stroke-width:1px;
-  class API,Processor,DB,Storage,Realtime,AI,Dest infra;
+  Dest -- "delivery responses" --> Processor
 ```
+
+## Tech stack
+
+This project uses the following technologies and libraries. The list is intended to help contributors and reviewers quickly understand the technology surface.
+
+- Frontend
+
+  - Next.js (App Router) — server and client rendering
+  - React
+  - TypeScript
+  - Tailwind CSS
+  - shadcn/ui (component primitives)
+  - React Flow (visual flow builder)
+  - Recharts (analytics)
+
+- State & data fetching
+
+  - Zustand (client state)
+  - Optional: TanStack Query / React Query (where used)
+
+- Backend & runtime
+
+  - Appwrite (Database, Functions, Realtime, Auth, Storage)
+  - Node.js 20 for serverless functions and function runtimes
+  - Next.js API Routes for server-side endpoints
+
+- AI
+
+  - OpenAI (GPT) and/or Google Generative AI (Gemini) integration for AI-assisted transforms and flow generation
+
+- Integrations / Destinations
+
+  - Slack, Discord, generic Webhooks, Email (Resend or similar)
+
+- Dev tooling
+
+  - ESLint, Prettier
+  - TypeScript compiler (tsc)
+  - Husky + lint-staged (recommended for pre-commit)
+  - Vitest or Jest (unit tests)
+
+- CI / CD
+
+  - GitHub Actions (recommended) for CI workflows and releases
+  - Dependabot for dependency updates
+
+- Local development & deployment
+  - Vercel (recommended for frontend hosting)
+  - Docker / Docker Compose for local Appwrite (optional)
 
 ## Data flow (sequence)
 
@@ -296,3 +342,217 @@ This project is provided under the MIT License. See the `LICENSE` file in the re
 ## Contact and support
 
 For issues and discussion, open an issue in this repository. Include reproduction steps and any logs when reporting bugs.
+
+## Presentation: Business analysis, market fit, and go-to-market
+
+This section is written as a compact, slide-style presentation for technical founders and contributors. It includes additional flow diagrams (Mermaid), market analysis, GTM strategy, pricing suggestions, KPIs, and recommended next steps.
+
+### Executive summary
+
+- Product: EventMesh — a visual webhook routing and testing platform that combines a drag-and-drop flow builder, deterministic execution tracing, and AI-assisted transformations.
+- Target users: Developer teams, platform engineers, QA teams, and small/medium SaaS vendors that rely heavily on webhooks and event-driven integrations.
+- Value proposition: Reduce integration time, improve reliability, and provide repeatable testing and observability for webhook-driven systems.
+
+---
+
+### Slide: Problem and opportunity
+
+- Problem statements
+
+  - Webhook integrations are brittle: payload changes and retries cause failures and operational load.
+  - Debugging distributed webhook flows is slow and error-prone.
+  - Developers need repeatable testing and safe environments to iterate on transforms.
+
+- Market opportunity
+  - Webhooks and event-driven integrations are core to modern SaaS; every SaaS product exposes or consumes webhooks.
+  - Addressable market: companies building integrations, platform teams, and B2B SaaS apps.
+
+---
+
+### Slide: Solution overview (diagram)
+
+```mermaid
+flowchart LR
+  A["External Services"]
+  B["EventMesh - Ingestion"]
+  C["Execution Engine"]
+  D["Destinations"]
+  E["Analytics & Observability"]
+  F["Playground & Replay"]
+
+  A -->|Webhook POST| B
+  B --> C
+  C --> D
+  C --> E
+  C --> F
+  F --> C
+```
+
+Notes: The diagram highlights the core value — deterministic processing with observability and the ability to iterate via the Playground.
+
+---
+
+### Slide: Customer journey (developer/tester)
+
+```mermaid
+sequenceDiagram
+  participant Dev as Developer
+  participant UI as EventMesh UI
+  participant API as Appwrite/API
+  participant Ext as External Service
+
+  Dev->>UI: Create workspace & flow
+  UI->>API: Save flow (nodes, edges)
+  Dev->>UI: Copy webhook URL
+  Ext->>API: POST -> webhook
+  API->>UI: Event appears in feed
+  Dev->>UI: Open execution trace
+  Dev->>UI: Edit transform -> Test in Playground
+  UI->>API: Replay event
+  API->>UI: Updated execution results
+```
+
+This flow emphasizes fast feedback cycles: create → test → inspect → iterate.
+
+---
+
+### Market sizing and positioning
+
+High-level TAM/SAM/SOM (illustrative estimates; validate with your own research):
+
+- Total Addressable Market (TAM): Developers and platform teams at companies using webhook-based integrations worldwide. Estimate: 50M developers and 10M companies — depends on segmentation.
+- Serviceable Available Market (SAM): Developer teams at SMB and mid-market SaaS companies (10k–200k potential organizations).
+- Serviceable Obtainable Market (SOM): Early target — developer-heavy startups and B2B SaaS with integration needs (1k–5k customers over 3–5 years).
+
+Positioning
+
+- EventMesh should position as: "Developer-first webhook routing and testing platform with deep traceability and AI-assisted transforms." Differentiate on debugging, replay, and execution tracing rather than just connectors.
+
+---
+
+### Competitor positioning matrix (visual)
+
+```mermaid
+graph TD
+  Zapier[Zapier]
+  Make[Make]
+  n8n[n8n]
+  Pipedream[Pipedream]
+  EventMesh[EventMesh]
+
+  Zapier -->|No code business| Make
+  Make -->|Visual automation| n8n
+  n8n -->|Open source| Pipedream
+  Pipedream -->|Developer workflows| EventMesh
+  EventMesh -->|Webhook-first, testing, AI transforms| Zapier
+```
+
+Key differentiation: EventMesh focuses on webhook-first workflows plus built-in testing and replay for reliability; competitors focus on broader integrations or code-first workflows.
+
+---
+
+### Go-to-market (GTM) strategy
+
+1. Developer-led adoption (bottom-up)
+   - Provide an open-source, self-hostable edition to attract platform engineers and early adopters.
+   - Offer clear Quickstart and one-click Appwrite deployment scripts.
+2. Product-led growth (PLG)
+   - Fast onboarding, sample flows, and pre-built templates for GitHub, Stripe, and Slack.
+   - Built-in Playground and replay are key conversion hooks (trial → active usage).
+3. Partnerships and integrations
+   - Partner with Appwrite and major SaaS vendors (Slack, GitHub) for templates and joint content.
+4. Community and content
+   - Publish integration recipes, debugging case studies, and open-source transformer snippets.
+
+---
+
+### Pricing and monetization options
+
+Recommended pricing tiers (examples):
+
+|                    Tier | Intended customers                 |                                  Key limits | Price (monthly, indicative) |
+| ----------------------: | ---------------------------------- | ------------------------------------------: | --------------------------: |
+| Open Source / Self-host | Individual developers, small teams |            No hosted SLA, community support |                        Free |
+|                 Starter | Small teams, early-stage startups  | 50k events / mo, basic support, 1 workspace |                         $49 |
+|                     Pro | Growing teams                      |      1M events / mo, team seats, audit logs |                        $299 |
+|              Enterprise | Large orgs                         |    Custom SLOs, dedicated support, SSO, VPC |                      Custom |
+
+Monetization levers
+
+- Hosted SaaS subscription with usage tiers (events per month)
+- Add-ons: premium connectors, AI transform tokens, SLA/enterprise support
+- Professional services: migration, templates, integration engineering
+
+---
+
+### Key performance indicators (KPIs)
+
+- Activation: time-to-first-flow, % users who create 1+ flow in first 7 days
+- Retention: weekly active flows per workspace, monthly retained customers
+- Engagement: events processed per workspace, replay usage
+- Conversion: % self-host → paid hosted migration (if offering hosted)
+- Reliability: mean execution latency, success rate, P95 latency
+
+---
+
+### Financial model (simplified assumptions)
+
+- Variable costs: Appwrite hosting, function execution cost, outbound bandwidth for destinations, AI API calls.
+- Revenue per customer (example): Starter $49, Pro $299 — with 1,000 Pro customers, ARR = $3.588M.
+- Key levers: reduce AI cost per transform (use batching/caching), optimize function execution, increase ARPU with advanced features.
+
+---
+
+### Recommended next steps (90 days)
+
+1. Validate developer demand with a small beta program targeting 20 developer teams.
+2. Publish 5 ready-made templates (GitHub→Slack, Stripe→CRM, Form→Email+DB) and measure adoption.
+3. Harden transform sandbox and add timeouts and observability for safe code execution.
+4. Create a simple hosted offering (Starter tier) and measure conversion from OSS installs.
+
+---
+
+### Appendix: Additional flow diagrams
+
+System deployment view
+
+```mermaid
+graph LR
+  Browser["Developer Browser"]
+  Vercel["Vercel / Hosting"]
+  NextAPI["Next.js API Routes"]
+  Appwrite["Appwrite Cloud"]
+  Functions["Appwrite Functions"]
+  Worker["Event Processor"]
+  Dest["External Destinations"]
+
+  Browser --> Vercel
+  Vercel --> NextAPI
+  NextAPI --> Appwrite
+  Appwrite --> Functions
+  Functions --> Worker
+  Worker --> Dest
+```
+
+Event retry and dead-letter logic
+
+```mermaid
+flowchart TD
+  Event[Incoming Event]
+  Processor[Processor]
+  Success[Success]
+  Retry[Retry Queue]
+  DLQ[Dead Letter Queue]
+
+  Event --> Processor
+  Processor -- success --> Success
+  Processor -- transient error --> Retry
+  Retry --> Processor
+  Processor -- repeated failures --> DLQ
+```
+
+---
+
+If you want, I will convert the above sections into a small slide deck (PDF or PPTX) and produce speaker notes for each slide. I can also pull metrics from your environment if you permit a local run and provide Appwrite credentials for a sandbox project.
+
+If you'd like the slide deck or further refinements (pricing sensitivity analysis, slide visuals), tell me the preferred output format and I will continue.
