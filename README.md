@@ -550,9 +550,3 @@ flowchart TD
   Retry --> Processor
   Processor -- repeated failures --> DLQ
 ```
-
----
-
-If you want, I will convert the above sections into a small slide deck (PDF or PPTX) and produce speaker notes for each slide. I can also pull metrics from your environment if you permit a local run and provide Appwrite credentials for a sandbox project.
-
-If you'd like the slide deck or further refinements (pricing sensitivity analysis, slide visuals), tell me the preferred output format and I will continue.
