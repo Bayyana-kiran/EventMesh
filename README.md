@@ -33,366 +33,266 @@ Traditional webhook management is painful:
 - 🔁 Repetitive transformation logic
 - 📊 Limited monitoring and analytics
 
-### The Solution
+# EventMesh
 
-EventMesh provides:
+EventMesh is a developer-first visual event routing platform designed to simplify, test, and operate webhook-driven integrations and event pipelines.
 
-- 🎨 **Visual Flow Builder** - Design event pipelines with drag-and-drop
-- 🤖 **AI Transformations** - Let GPT-4 write your transformation code
-- ⚡ **Real-time Processing** - See events flow through your system live
-- 📊 **Built-in Analytics** - Track performance and success rates
-- 🔄 **Event Replay** - Debug and test with historical events
-- 🎯 **Multi-Destination Routing** - Send to Slack, Discord, APIs, and more
+This repository contains the frontend application (Next.js + TypeScript) and supporting libraries for building, running, and testing flows that accept webhooks, run transformations (JavaScript or AI-assisted), and deliver events to destinations such as webhooks, Slack, Discord, or other APIs.
 
----
+Table of contents
 
-## ✨ Key Features
+- Overview
+- Motivation and value proposition
+- Core concepts
+- Architecture (high-level)
+- Data flow (sequence)
+- Features
+- How EventMesh helps developers and testers
+- Comparison with competing tools
+- Quickstart (local development)
+- Appwrite backend and collections (summary)
+- Deployment notes
+- Security considerations
+- Contributing
+- Roadmap
+- License
 
-### 1. Visual Flow Builder
+## Overview
 
-Build complex event routing workflows with an intuitive drag-and-drop interface powered by React Flow.
+EventMesh provides a visual flow builder and an execution engine to route events from HTTP webhooks through transform steps to one or more destinations. The platform emphasizes developer productivity, observability, and safe experimentation via replay and testing tools.
 
+Key properties:
+
+- Visual flow builder (drag-and-drop)
+- Transform nodes: JavaScript-first, optional AI assist for code generation and schema extraction
+- Event ingestion via authenticated webhook endpoints
+- Execution records and step-level tracing for observability
+- Replay, playground, and testing tooling for QA
+- Built on Appwrite for data, functions, and realtime subscriptions (configurable)
+
+## Motivation and value proposition
+
+Developers and QA teams often spend significant time wiring webhooks, creating transformation logic, and debugging event delivery problems. EventMesh reduces friction by:
+
+- Offering a visual way to compose event pipelines, reducing boilerplate code
+- Providing safe execution contexts for transformations with clear execution logs
+- Allowing quick iteration via a built-in playground and event replay
+- Offering analytics and success/failure visibility for operational monitoring
+
+This combination shortens feedback loops, reduces integration bugs, and helps teams deliver reliable event-driven integrations faster.
+
+## Core concepts
+
+- Flow: a named DAG of nodes (source → transforms → destinations) saved per workspace.
+- Node: a functional block; types include Source, Transform, and Destination.
+- Source: generates webhook URLs that external systems post to.
+- Transform: user-provided JavaScript or AI-generated code that mutates or filters payloads.
+- Destination: an external endpoint (webhook, Slack, Discord) to which transformed payloads are delivered.
+- Event: the record created when an external POST hits a Source webhook.
+- Execution: the record and trace created when a flow processes an Event.
+
+## Architecture (high-level)
+
+The system separates concerns into Client, Orchestration, Data, and External layers. The following Mermaid diagram shows the high-level architecture.
+
+```mermaid
+graph LR
+  UI[Client - Next.js App]
+  API[Server - Next.js API & Appwrite Functions]
+  Processor[Event Processor / Execution Engine]
+  DB[Appwrite Database]
+  Storage[Appwrite Storage]
+  Realtime[Appwrite Realtime]
+  AI[AI Services (OpenAI / Gemini)]
+  Dest[External Destinations (Slack, Webhook, Discord, Email)]
+
+  UI --> API
+  API --> DB
+  API --> Storage
+  API --> Realtime
+  API --> Processor
+  Processor --> DB
+  Processor --> AI
+  Processor --> Dest
+  Processor --> Realtime
+  Dest -->|Delivery responses| Processor
+
+  classDef infra fill:#f5f5f5,stroke:#333,stroke-width:1px;
+  class API,Processor,DB,Storage,Realtime,AI,Dest infra;
 ```
-[GitHub Webhook] → [Transform] → [Slack Notification]
-                 ↘ [Filter]    → [Database]
+
+## Data flow (sequence)
+
+The following sequence diagram illustrates a typical event lifecycle from ingestion to delivery and UI update.
+
+```mermaid
+sequenceDiagram
+  participant S as Sender (external)
+  participant W as Webhook Receiver (API)
+  participant DB as Appwrite DB
+  participant P as Event Processor
+  participant D as Destination
+  participant UI as Frontend (Realtime)
+
+  S->>W: POST /api/webhook/{webhookId} + headers
+  W->>DB: write event (status: pending)
+  W-->>S: 202 Accepted (eventId)
+  DB->>P: trigger on event.create (or P polls)
+  P->>DB: create execution (status: running)
+  P->>P: execute nodes in DAG order (transform / route)
+  P->>D: deliver payload
+  D-->>P: response / error
+  P->>DB: update execution (status: success/failed) and node-level logs
+  P->>UI: broadcast updates via Realtime
+  UI->>DB: fetch execution details for display
 ```
 
-**Node Types:**
+## Features
 
-- **Source Nodes** - Webhook receivers with unique URLs
-- **Transform Nodes** - JavaScript or AI-powered data transformation
-- **Destination Nodes** - Slack, Discord, Webhooks, Email
+- Visual flow builder with drag-and-drop canvas
+- Source nodes with auto-generated webhook URLs and API key authentication
+- Transform nodes supporting JavaScript and AI-assisted generation
+- Execution tracing with node-level inputs/outputs and errors
+- Replay and playground for deterministic testing
+- Destinations for webhooks, Slack, Discord, email, and custom APIs
+- Analytics: event volume, success/failure rates, latency histograms
+- Role- and workspace-based scoping for multi-tenant usage
 
-### 2. AI-Powered Transformations
+## How EventMesh helps developers and testers (detailed)
 
-Describe what you want in plain English, and GPT-4 generates the transformation code.
+Developer productivity
 
-**Example:**
+- Reduce time to integrate by composing flows visually instead of wiring glue code
+- Reuse common transformation snippets between flows
+- AI-assisted transforms accelerate creating robust parsing/mapping logic
 
-```
-User: "Extract the PR number and author from GitHub webhook"
-AI: Generates JavaScript transformation code automatically
-```
+Testing and QA
 
-### 3. Real-Time Event Streaming
+- Built-in Playground to exercise webhook endpoints with custom payloads and headers
+- Event replay capability to re-run historical events against updated flows
+- Deterministic executions stored in `executions` collection to inspect behavior
 
-Watch events flow through your system with live animations and execution tracking.
+Observability and operations
 
-### 4. Comprehensive Analytics
+- Node-level traces and execution durations to identify bottlenecks
+- Aggregated analytics for operational health and capacity planning
+- Retry and failure tracking for resilient delivery
 
-- Event volume trends
-- Success/failure rates
-- Response time distribution
-- Flow performance metrics
+Security and compliance
 
-### 5. Developer-First Experience
+- API keys for trusted sources; optional webhook signature verification
+- Encrypted storage for destination credentials and secrets
+- Rate limiting to protect downstream systems and to enforce quotas
 
-- Built-in webhook tester
-- cURL command generator
-- API documentation
-- Event replay for debugging
+Business value
 
----
+- Faster integration delivery reduces engineer-hours
+- Improved reliability and observability reduces operational costs
+- Reusable flow patterns create predictable outcomes across teams
 
-## 🏗️ Architecture
+## Comparison with other tools
 
-EventMesh is built on a modern, scalable stack:
+This table summarizes differences between EventMesh and common existing solutions. The entries are concise; evaluate specifics against your use cases.
 
-### Frontend
+| Tool              |                                       Core focus |        Visual builder        |     AI-assisted transforms      |             Self-hostable              |    Open Source    | Pricing model                      | Best for                                                                   |
+| ----------------- | -----------------------------------------------: | :--------------------------: | :-----------------------------: | :------------------------------------: | :---------------: | ---------------------------------- | -------------------------------------------------------------------------- |
+| EventMesh         | Visual event routing + developer/testing tooling |             Yes              |         Yes (built-in)          | Yes (can self-host alongside Appwrite) | Yes / source repo | Open-source — self-host or managed | Developer teams building & testing webhook integrations and custom routing |
+| Zapier            |                      SaaS integration automation |       Yes (task-based)       | Limited (via code steps / apps) |                   No                   |        No         | Subscription SaaS                  | Non-developer business automation                                          |
+| Make (Integromat) |              Visual automation & data transforms |             Yes              |             Limited             |                   No                   |        No         | Subscription SaaS                  | Complex multi-app automations for business users                           |
+| n8n               |              Workflow automation and integration |             Yes              |     Community nodes for AI      |                  Yes                   |     Yes (OSS)     | Self-host (OSS) + Cloud            | Devs & teams wanting self-hosted automation with extensibility             |
+| Pipedream         |         Developer-focused event-driven workflows | Code-first with visual flows |      Supports AI via code       |      Yes (self-hosted enterprise)      |     Partially     | Cloud + Enterprise                 | Developers building programmatic integrations and event processors         |
 
-- **Next.js 14** (App Router, Server Components)
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - Beautiful, accessible components
-- **React Flow** - Visual flow builder
-- **Zustand** - State management
+Notes:
 
-### Backend
+- EventMesh focuses specifically on webhook-first event routing, execution traceability, and testing workflows. It aims to combine the best of visual builders with developer control over transforms and execution artifacts.
 
-- **Appwrite** - Complete backend platform
-  - **Functions** - Serverless event processing
-  - **Database** - Event and flow storage
-  - **Realtime** - Live event streaming
-  - **Auth** - User authentication
-  - **Storage** - Event payload archiving
+## Quickstart (local development)
 
-### AI
+Prerequisites
 
-- **OpenAI GPT-4** - Intelligent transformations and code generation
+- Node.js 20+ and npm
+- An Appwrite project (cloud or self-hosted) with a database created
+- (Optional) OpenAI API key for AI features
 
----
+Local steps
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 20+
-- Appwrite account ([sign up free](https://cloud.appwrite.io))
-- OpenAI API key
-
-### 1. Clone the Repository
+1. Clone repository and install dependencies
 
 ```bash
-git clone https://github.com/yourusername/eventmesh.git
-cd eventmesh
-```
-
-### 2. Install Dependencies
-
-```bash
-cd app
+cd /path/to/where/you/want
+git clone https://github.com/Bayyana-kiran/eventmesh.git
+cd eventmesh/app
 npm install
 ```
 
-### 3. Configure Environment Variables
+2. Create `.env.local` in `app/` with required variables (see `app/.env.example` for names). At minimum set:
 
-Create `app/.env.local`:
-
-```env
-# Appwrite Configuration
+```
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-NEXT_PUBLIC_APPWRITE_PROJECT_ID=your-project-id
-
-# Database Configuration
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_APPWRITE_DATABASE_ID=eventmesh-db
-NEXT_PUBLIC_APPWRITE_COLLECTION_WORKSPACES=workspaces
-NEXT_PUBLIC_APPWRITE_COLLECTION_FLOWS=flows
-NEXT_PUBLIC_APPWRITE_COLLECTION_EVENTS=events
-NEXT_PUBLIC_APPWRITE_COLLECTION_EXECUTIONS=executions
-NEXT_PUBLIC_APPWRITE_COLLECTION_DESTINATIONS=destinations
-NEXT_PUBLIC_APPWRITE_COLLECTION_API_KEYS=api_keys
-
-# Server-side Appwrite
-APPWRITE_API_KEY=your-api-key
-
-# OpenAI
-OPENAI_API_KEY=your-openai-key
+APPWRITE_API_KEY=your_server_api_key
+OPENAI_API_KEY=your_openai_key
 ```
 
-### 4. Set Up Appwrite Backend
-
-Follow the [complete deployment guide](./app/docs/DEPLOYMENT.md) to:
-
-- Create database and collections
-- Deploy Appwrite Functions
-- Configure authentication
-
-### 5. Run Development Server
+3. Start the app
 
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000` 🎉
+4. Visit `http://localhost:3000` and follow the onboarding to create a workspace and flows. Use the Playground to send test webhooks.
 
----
+## Appwrite backend: collections (summary)
 
-## 📖 Usage Examples
+EventMesh expects the following collections in the configured Appwrite database. These are summarized; the docs contain detailed attribute types.
 
-### Example 1: GitHub to Slack Notifications
+- workspaces — workspace metadata and settings
+- flows — stored flow definitions (nodes, edges, webhookId, status)
+- events — incoming webhook events (payload, headers, status, receivedAt)
+- executions — execution traces and node-level logs
+- destinations — destination configs and credentials
+- api_keys — stored API keys (hashed) with permissions and last-used metadata
+- analytics — aggregated metrics (optional)
 
-Route GitHub push events to a Slack channel:
+Scripts and automation in `app/scripts/` help create collections or seed data when present.
 
-1. Create a new flow
-2. Add a **Source Node** (generates webhook URL)
-3. Add a **Transform Node** with JavaScript:
-   ```javascript
-   return {
-     text: `New push to ${payload.repository.name}`,
-     author: payload.pusher.name,
-     commits: payload.commits.length,
-   };
-   ```
-4. Add a **Destination Node** (Slack webhook)
-5. Connect and activate
+## Deployment notes
 
-### Example 2: Stripe to CRM Sync
+- Frontend: deploy the `app/` directory to Vercel, Netlify, or a static hosting provider that supports Next.js Server components (or use the Node server for SSR builds).
+- Backend (functions): Appwrite Cloud Functions are the primary recommendation for production-scale event processing; alternatively, adapt processing logic to dedicated serverless platforms.
+- Environment variables are required both for the frontend and for serverless functions. Do not commit secrets to source control.
 
-Automatically sync Stripe payments to your CRM:
+## Security considerations
 
-1. Source: Stripe webhook
-2. Transform (AI): "Extract customer email and amount"
-3. Destination: Custom API endpoint
+- API keys: store hashed keys server-side; validate and log usage. Rotate keys periodically.
+- Webhook signature verification: support provider signatures and timing-safe comparisons to validate sender authenticity.
+- Secrets for destinations must be encrypted at rest and masked in UIs.
+- Enforce per-workspace authorization and query scoping to avoid cross-tenant data leakage.
+- Rate limiting and throttling: implement limits per API key/workspace to protect downstream systems.
 
-### Example 3: Form Submissions to Multiple Channels
+## Contributing
 
-Distribute form submissions to email, Slack, and database:
+We welcome contributors. Suggested process:
 
-```
-[Form Webhook] → [Transform] → [Email]
-               ↘ [Format]    → [Slack]
-               ↘ [Validate]  → [Database API]
-```
+1. Fork the repository and create a topic branch for your change.
+2. Open a clear PR with a description of the change and motivation.
+3. Keep changes small and focused; add tests for new behavior.
+4. Follow TypeScript and linting rules; run `npm run format` / `npm run lint` where available.
 
----
+Please open issues for feature requests or bugs before a large implementation so maintainers can provide feedback on approach and scope.
 
-## 🎯 Use Cases
+## Roadmap
 
-- **DevOps Automation** - Deploy notifications, CI/CD triggers
-- **Customer Communication** - Order confirmations, support tickets
-- **Data Integration** - Sync between SaaS tools
-- **Monitoring & Alerts** - System health, error tracking
-- **Analytics Pipelines** - Event collection and processing
-- **Multi-Channel Notifications** - Slack, Discord, Email, SMS
+- Improve transform sandboxing and add replay test suites
+- Add built-in role and team management for multi-user workspaces
+- Expand destination templates and templates marketplace
+- Add enterprise-grade rate limiting and billing integrations
 
----
+## License
 
-## 🛠️ Development
+This project is provided under the MIT License. See the `LICENSE` file in the repository root.
 
-### Project Structure
+## Contact and support
 
-See the detailed [codebase structure documentation](./app/docs/CODEBASE_STRUCTURE.md) for a complete overview.
-
-```
-eventmesh/
-├── app/                      # Next.js frontend
-│   ├── app/                  # App router pages
-│   │   ├── dashboard/        # Dashboard pages
-│   │   ├── login/            # Auth pages
-│   │   └── page.tsx          # Landing page
-│   ├── components/           # React components
-│   │   ├── flow/             # Flow builder components
-│   │   └── ui/               # shadcn/ui components
-│   ├── lib/                  # Utilities and configs
-│   │   ├── appwrite/         # Appwrite SDK setup
-│   │   ├── types.ts          # TypeScript definitions
-│   │   └── utils.ts          # Helper functions
-│   └── package.json
-│
-├── docs/                     # Complete documentation
-│   ├── README.md             # Docs index
-│   ├── QUICKSTART.md         # Quick start guide
-│   ├── DEPLOYMENT.md         # Deployment guide
-│   ├── ARCHITECTURE.md       # System architecture
-│   ├── CODEBASE_STRUCTURE.md # Code organization
-│   ├── TESTING_GUIDE.md      # Testing documentation
-│   ├── api-reference.md      # API documentation
-│   ├── flow-builder.md       # Flow builder guide
-│   ├── webhooks.md           # Webhook guide
-│   └── transformations.md    # Transformation guide
-│
-├── functions/                # Appwrite Functions
-│   ├── webhook-receiver/     # Receives webhooks
-│   ├── event-processor/      # Processes events through flows
-│   └── ai-transformer/       # AI-powered transformations
-│
-└── README.md                 # This file
-```
-
-### Available Scripts
-
-**Frontend:**
-
-```bash
-npm run dev          # Development server
-npm run build        # Production build
-npm run start        # Production server
-npm run lint         # ESLint check
-```
-
-**Functions:**
-
-```bash
-cd functions/webhook-receiver
-npm install          # Install dependencies
-npm run format       # Format code with Prettier
-```
-
-### Contributing
-
-We welcome contributions! See our [contribution guide](./CONTRIBUTING.md) for guidelines.
-
----
-
-## 📊 Performance
-
-- **First Contentful Paint**: < 1.5s
-- **Time to Interactive**: < 3s
-- **Lighthouse Score**: > 90
-- **Event Processing Latency**: < 200ms avg
-
----
-
-## 🔒 Security
-
-- ✅ API key authentication for webhooks
-- ✅ CORS configuration
-- ✅ Input validation on all endpoints
-- ✅ Rate limiting per workspace
-- ✅ Encrypted environment variables
-- ✅ Secure Appwrite Functions execution
-
----
-
-## 🗺️ Roadmap
-
-### v1.0 (Current) ✅
-
-- Visual flow builder
-- Basic transformations
-- Slack/Discord destinations
-- Analytics dashboard
-
-### v1.1 (Next)
-
-- [ ] Flow templates marketplace
-- [ ] Webhook signature verification
-- [ ] Advanced filtering and routing
-- [ ] Team collaboration features
-
-### v2.0 (Future)
-
-- [ ] CLI tool (`npx eventmesh init`)
-- [ ] GraphQL API
-- [ ] Native integrations (Stripe SDK, GitHub App)
-- [ ] Flow versioning and rollback
-- [ ] Custom node plugins
-
-[See full roadmap](./app/docs/roadmap.md)
-
----
-
-## 🤝 Built With
-
-- [Next.js](https://nextjs.org/) - React framework
-- [Appwrite](https://appwrite.io/) - Backend platform
-- [React Flow](https://reactflow.dev/) - Flow visualization
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [shadcn/ui](https://ui.shadcn.com/) - UI components
-- [OpenAI](https://openai.com/) - AI transformations
-- [Zustand](https://zustand-demo.pmnd.rs/) - State management
-- [Recharts](https://recharts.org/) - Analytics charts
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Appwrite team for an amazing backend platform
-- React Flow team for the flow visualization library
-- shadcn for the beautiful component library
-- The open-source community
-
----
-
-## 🔗 Links
-
-- **Live Demo**: [eventmesh.dev](#)
-- **Documentation**: [docs.eventmesh.dev](#)
-- **Discord**: [discord.gg/eventmesh](#)
-- **Twitter**: [@eventmesh](#)
-
----
-
-<div align="center">
-
-**Made with ❤️ by developers, for developers**
-
-[⬆ Back to Top](#eventmesh-)
-
-</div>
+For issues and discussion, open an issue in this repository. Include reproduction steps and any logs when reporting bugs.
