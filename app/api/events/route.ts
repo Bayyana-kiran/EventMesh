@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
           const flow = (await databases.getDocument(
             DATABASE_ID,
             FLOWS_COLLECTION_ID,
-            (event as Event).flow_id
+            (event as unknown as Event).flow_id
           )) as Flow;
           return {
             ...event,
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           };
         } catch (error) {
           console.warn(
-            `⚠️ Could not fetch flow ${(event as Event).flow_id}:`,
+            `⚠️ Could not fetch flow ${(event as unknown as Event).flow_id}:`,
             error
           );
           return {
