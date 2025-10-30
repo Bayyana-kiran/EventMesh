@@ -8,7 +8,7 @@ export type NodeType = "source" | "transform" | "destination";
 export type FlowStatus = "active" | "paused" | "draft";
 export type EventStatus = "pending" | "processing" | "completed" | "failed";
 export type ExecutionStatus = "running" | "success" | "failed";
-export type DestinationType =
+ export type DestinationType =
   | "slack"
   | "discord"
   | "webhook"
