@@ -1,20 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
-import { ID } from "node-appwrite";
+import { ID, Models } from "node-appwrite";
 import { FlowExecutionEngine } from "@/lib/execution-engine";
 import { validateSchema } from "@/lib/utils";
+import { Flow, FlowNode, FlowEdge, NodeExecution } from "@/lib/types";
+
+interface ExecutionFlowNode {
+  id: string;
+  type: "source" | "transform" | "destination";
+  data: Record<string, unknown>;
+  position: { x: number; y: number };
+}
+
+interface ExecutionFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+}
 
 /**
  * Execute flow asynchronously in the background
  */
 async function executeFlowAsync(
-  flow: any,
+  flow: Flow,
   executionId: string,
   eventId: string,
-  payload: any
+  payload: Record<string, unknown>
 ) {
   // make startTime visible to both try and catch blocks
   let startTime = 0;
@@ -34,17 +46,23 @@ async function executeFlowAsync(
         id,
         data
       );
-    } catch (updateErr: any) {
+    } catch (updateErr: unknown) {
       // Normalize response text (try to extract message from JSON if present)
-      const respRaw = updateErr?.response ?? updateErr?.message ?? "";
+      const errorObj = updateErr as { response?: unknown; message?: unknown };
+      const respRaw = errorObj?.response ?? errorObj?.message ?? "";
       let respStr = String(respRaw);
 
       try {
         // If response is a JSON string, parse and extract the message field
         const parsed =
           typeof respRaw === "string" ? JSON.parse(respRaw) : respRaw;
-        if (parsed && typeof parsed === "object" && parsed.message) {
-          respStr = String(parsed.message);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          "message" in parsed &&
+          typeof parsed.message === "string"
+        ) {
+          respStr = parsed.message;
         }
       } catch {
         // ignore JSON parse errors and keep respStr as-is
@@ -68,7 +86,7 @@ async function executeFlowAsync(
       if (uniqueAttrs.length > 0) {
         const sanitized: Record<string, unknown> = { ...data };
         for (const a of uniqueAttrs) {
-          if (a in sanitized) delete (sanitized as any)[a];
+          delete sanitized[a];
         }
 
         try {
@@ -98,15 +116,18 @@ async function executeFlowAsync(
     await safeUpdateExecution(executionId, { status: "running" });
 
     // Parse nodes and edges from flow
-    const nodes = JSON.parse(flow.nodes || "[]");
-    const edges = JSON.parse(flow.edges || "[]");
+    const flowData = flow as unknown as { nodes: string; edges: string };
+    const nodesStr = flowData.nodes;
+    const edgesStr = flowData.edges;
+    const nodes: FlowNode[] = JSON.parse(nodesStr || "[]");
+    const edges: FlowEdge[] = JSON.parse(edgesStr || "[]");
 
     console.log(`📊 Flow has ${nodes.length} nodes and ${edges.length} edges`);
 
     // Create execution engine
     const engine = new FlowExecutionEngine(
-      nodes,
-      edges,
+      nodes as unknown as ExecutionFlowNode[],
+      edges as unknown as ExecutionFlowEdge[],
       executionId,
       flow.$id,
       eventId,
@@ -177,8 +198,8 @@ async function executeFlowAsync(
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            workspaceId: (flow as any).workspace_id,
-            flowName: (flow as any).name,
+            workspaceId: flow.workspace_id,
+            flowName: flow.name,
             error: result.error || "Unknown error",
           }),
         });
@@ -197,7 +218,7 @@ async function executeFlowAsync(
         Date.now() - (typeof startTime === "number" ? startTime : Date.now());
 
       // Try to get any partial execution steps if available
-      const nodeExecutions: any[] = [];
+      const nodeExecutions: NodeExecution[] = [];
       try {
         // If we have a flow and execution context, we could potentially get partial steps
         // For now, we'll leave this empty as the execution failed before completion
@@ -246,20 +267,22 @@ export async function POST(
       COLLECTION_IDS.FLOWS
     );
 
-    const flow = flows.documents.find((f: any) =>
-      f.webhook_url?.includes(webhookId)
-    );
+    const flow = flows.documents.find((f) => {
+      const flowDoc = f as unknown as { webhook_url?: string };
+      return flowDoc.webhook_url?.includes(webhookId);
+    }) as Flow | undefined;
 
     if (!flow) {
       console.error("❌ No flow found for webhook ID:", webhookId);
       return NextResponse.json({ error: "Flow not found" }, { status: 404 });
     }
 
-    console.log("✅ Found flow:", (flow as any).name);
+    console.log("✅ Found flow:", flow.name);
 
     // Validate payload against schema if defined in source node
-    const nodes = JSON.parse((flow as any).nodes || "[]");
-    const sourceNode = nodes.find((node: any) => node.type === "source");
+    const flowData = flow as unknown as { nodes: string };
+    const nodes = JSON.parse(flowData.nodes || "[]");
+    const sourceNode = nodes.find((node: FlowNode) => node.type === "source");
 
     if (sourceNode?.data?.config?.schema) {
       console.log("🔍 Validating payload against schema");
@@ -280,10 +303,10 @@ export async function POST(
     }
 
     // Check if flow is active
-    if ((flow as any).status !== "active") {
-      console.warn("⚠️ Flow is not active:", (flow as any).status);
+    if (flow.status !== "active") {
+      console.warn("⚠️ Flow is not active:", flow.status);
       return NextResponse.json(
-        { error: "Flow is not active", status: (flow as any).status },
+        { error: "Flow is not active", status: flow.status },
         { status: 400 }
       );
     }
@@ -294,7 +317,7 @@ export async function POST(
       COLLECTION_IDS.EVENTS,
       ID.unique(),
       {
-        workspace_id: (flow as any).workspace_id,
+        workspace_id: flow.workspace_id,
         flow_id: flow.$id,
         source: "webhook",
         event_type: "webhook.received",
@@ -314,14 +337,14 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        workspaceId: (flow as any).workspace_id,
+        workspaceId: flow.workspace_id,
       }),
     }).catch((err) => {
       console.error("Failed to check event volume:", err);
     });
 
     const executionId = ID.unique();
-    let execution: any = null;
+    let execution: Models.Document | null = null;
 
     // Build execution payload (do NOT include workspace_id at create time to
     // avoid Appwrite collection schema rejections). If the flow has a
@@ -347,22 +370,26 @@ export async function POST(
 
       // If the flow has workspace_id, try to add it via update. This keeps the
       // initial create fast and avoids create-time schema validation errors.
-      if ((flow as any)?.workspace_id) {
+      if (flow.workspace_id) {
         try {
           await databases.updateDocument(
             APPWRITE_DATABASE_ID,
             COLLECTION_IDS.EXECUTIONS,
             execution.$id,
-            { workspace_id: (flow as any).workspace_id }
+            { workspace_id: flow.workspace_id }
           );
 
           console.log("ℹ️ workspace_id added to execution document");
-        } catch (updateErr: any) {
+        } catch (updateErr: unknown) {
           // If the collection schema doesn't accept workspace_id Appwrite will
           // return a document_invalid_structure error mentioning the unknown
           // attribute. Silently acknowledge that case to avoid noisy logs and
           // keep helpful info for other errors.
-          const resp = updateErr?.response || updateErr?.message || "";
+          const errorObj = updateErr as {
+            response?: unknown;
+            message?: unknown;
+          };
+          const resp = errorObj?.response ?? errorObj?.message ?? "";
           const respStr = String(resp);
 
           if (
@@ -375,12 +402,12 @@ export async function POST(
           } else {
             console.info(
               "ℹ️ Could not add workspace_id to execution document:",
-              updateErr?.message ?? updateErr
+              String(errorObj?.message ?? errorObj)
             );
           }
         }
       }
-    } catch (execErr: any) {
+    } catch (execErr: unknown) {
       // Something prevented creating the execution doc entirely. Log as an
       // error but continue — the flow will still run using the generated
       // `executionId` so that downstream records correlate.
@@ -405,7 +432,7 @@ export async function POST(
       event_id: event.$id,
       execution_id: execution?.$id ?? executionId,
       flow_id: flow.$id,
-      flow_name: (flow as any).name,
+      flow_name: flow.name,
     });
   } catch (error: unknown) {
     const errorMessage =
@@ -435,9 +462,10 @@ export async function GET(
       COLLECTION_IDS.FLOWS
     );
 
-    const flow = flows.documents.find((f: any) =>
-      f.webhook_url?.includes(webhookId)
-    );
+    const flow = flows.documents.find((f) => {
+      const flowDoc = f as unknown as { webhook_url?: string };
+      return flowDoc.webhook_url?.includes(webhookId);
+    }) as Flow | undefined;
 
     if (!flow) {
       return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
@@ -446,9 +474,9 @@ export async function GET(
     return NextResponse.json({
       webhook_id: webhookId,
       flow_id: flow.$id,
-      flow_name: (flow as any).name,
-      status: (flow as any).status,
-      webhook_url: (flow as any).webhook_url,
+      flow_name: flow.name,
+      status: flow.status,
+      webhook_url: flow.webhook_url,
     });
   } catch (error: unknown) {
     const errorMessage =

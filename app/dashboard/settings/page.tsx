@@ -41,20 +41,17 @@ interface NotificationSettings {
     recipients: string[];
     flowFailures: boolean;
     eventVolume: { enabled: boolean; threshold: number };
-    weeklyReports: boolean;
   };
   inApp: {
     enabled: boolean;
     flowFailures: boolean;
     eventVolume: { enabled: boolean; threshold: number };
-    weeklyReports: boolean;
   };
   webhook: {
     enabled: boolean;
     url: string;
     flowFailures: boolean;
     eventVolume: { enabled: boolean; threshold: number | null };
-    weeklyReports: boolean;
   };
 }
 
@@ -70,20 +67,17 @@ export default function SettingsPage() {
       recipients: [],
       flowFailures: false,
       eventVolume: { enabled: false, threshold: 1000 },
-      weeklyReports: false,
     },
     inApp: {
       enabled: true,
       flowFailures: true,
       eventVolume: { enabled: true, threshold: 1000 },
-      weeklyReports: true,
     },
     webhook: {
       enabled: false,
       url: "",
       flowFailures: false,
       eventVolume: { enabled: false, threshold: null },
-      weeklyReports: false,
     },
   });
   const [loading, setLoading] = useState(true);
@@ -592,34 +586,6 @@ export default function SettingsPage() {
                           <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
                         </label>
                       </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-purple-500/30 transition-colors">
-                        <div>
-                          <div className="font-medium text-sm">
-                            Weekly Reports
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Analytics summary every week
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={!!notifications.email?.weeklyReports}
-                            onChange={(e) =>
-                              setNotifications((prev) => ({
-                                ...prev,
-                                email: {
-                                  ...prev.email,
-                                  weeklyReports: e.target.checked,
-                                },
-                              }))
-                            }
-                          />
-                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
-                        </label>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -756,34 +722,6 @@ export default function SettingsPage() {
                                     ...(prev.inApp?.eventVolume || {}),
                                     enabled: e.target.checked,
                                   },
-                                },
-                              }))
-                            }
-                          />
-                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-green-500/30 transition-colors">
-                        <div>
-                          <div className="font-medium text-sm">
-                            Weekly Reports
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Analytics summary every week
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={!!notifications.inApp?.weeklyReports}
-                            onChange={(e) =>
-                              setNotifications((prev) => ({
-                                ...prev,
-                                inApp: {
-                                  ...prev.inApp,
-                                  weeklyReports: e.target.checked,
                                 },
                               }))
                             }
@@ -949,34 +887,6 @@ export default function SettingsPage() {
                                     ...(prev.webhook?.eventVolume || {}),
                                     enabled: e.target.checked,
                                   },
-                                },
-                              }))
-                            }
-                          />
-                          <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-blue-500/30 transition-colors">
-                        <div>
-                          <div className="font-medium text-sm">
-                            Weekly Reports
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Analytics summary every week
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={!!notifications.webhook?.weeklyReports}
-                            onChange={(e) =>
-                              setNotifications((prev) => ({
-                                ...prev,
-                                webhook: {
-                                  ...prev.webhook,
-                                  weeklyReports: e.target.checked,
                                 },
                               }))
                             }
