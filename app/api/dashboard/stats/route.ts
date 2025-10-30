@@ -174,7 +174,10 @@ export async function GET(request: Request) {
             null,
           createdAtIso: event.$createdAt,
           shortId: String(event.$id).slice(0, 8),
-          status: (execution as Execution)?.status || "pending",
+          status:
+            execution && typeof (execution as any).status === "string"
+              ? (execution as any).status
+              : "pending",
           time: timeAgo,
           flowId: event.flow_id,
         };
