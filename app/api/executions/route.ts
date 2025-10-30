@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
 
     // Parse node_executions from string to array for each execution
     const executions = executionsResponse.documents.map((execution) => ({
-      ...(execution as Execution & { node_executions: string }),
+      ...(execution as unknown as Execution & { node_executions: string }),
       node_executions: JSON.parse(
-        (execution as Execution & { node_executions: string })
+        (execution as unknown as Execution & { node_executions: string })
           .node_executions || "[]"
       ),
     }));
