@@ -48,7 +48,7 @@ export default function HomePage() {
                 Docs
               </Link>
               <Link
-                href="https://github.com/yourusername/eventmesh"
+                href="https://github.com/Bayyana-kiran/EventMesh"
                 target="_blank"
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
@@ -481,7 +481,7 @@ export default function HomePage() {
               </p>
               <div className="flex items-center gap-3">
                 <Link
-                  href="https://github.com/yourusername/eventmesh"
+                  href="https://github.com/Bayyana-kiran/EventMesh"
                   target="_blank"
                   className="h-9 w-9 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
                 >
