@@ -170,7 +170,8 @@ export async function GET(request: Request) {
           source: event.source || "Webhook",
           type: event.event_type || "webhook.received",
           flowName:
-            (flows.find((f) => f.$id === event.flow_id) as Flow)?.name || null,
+            (flows.find((f: any) => f.$id === event.flow_id) as any)?.name ||
+            null,
           createdAtIso: event.$createdAt,
           shortId: String(event.$id).slice(0, 8),
           status: (execution as Execution)?.status || "pending",
