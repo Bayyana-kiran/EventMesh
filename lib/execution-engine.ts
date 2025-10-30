@@ -466,16 +466,47 @@ export class FlowExecutionEngine {
 
       console.log("💬 Sending to Discord");
 
-      const message = {
-        content: (node.data?.message as string) || "EventMesh Notification",
-        embeds: [
+      // Prefer a short, human-friendly message when available. Only include
+      // the full JSON payload in the embed fields when `debug` is enabled on
+      // the destination node (useful for reducing noisy channel output).
+      const humanMessage = (node.data?.message as string) || "";
+      const debugFlag =
+        node.data?.debug === true || node.data?.debug === "true";
+
+      const prettyPayload = JSON.stringify(data, null, 2);
+
+      // Helper to safely truncate long strings for Discord embed field limits
+      const truncate = (s: string, max = 1000) =>
+        s.length > max ? `${s.slice(0, max - 3)}...` : s;
+
+      // Build embed description: prefer humanMessage, otherwise show payload
+      const embedDescription = humanMessage
+        ? humanMessage
+        : `\`\`\`json\n${truncate(prettyPayload, 1900)}\n\`\`\``;
+
+      const embeds: Array<Record<string, unknown>> = [
+        {
+          title: "Flow Execution",
+          description: embedDescription,
+          color: 5814783,
+          timestamp: new Date().toISOString(),
+        },
+      ];
+
+      if (debugFlag && humanMessage) {
+        embeds[0].fields = [
           {
-            title: "Flow Execution",
-            description: `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``,
-            color: 5814783, // Blue color
-            timestamp: new Date().toISOString(),
+            name: "Payload",
+            value: `\`\`\`json\n${truncate(prettyPayload, 1000)}\n\`\`\``,
           },
-        ],
+        ];
+      }
+
+ 
+
+      const message = {
+        content: humanMessage || "EventMesh Notification",
+        embeds,
       };
 
       const response = await fetch(webhookUrl, {
