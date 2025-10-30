@@ -21,7 +21,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Plus,
   Trash2,
   Copy,
   Check,
@@ -36,20 +35,36 @@ import { useToast } from "@/lib/hooks/use-toast";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Spinner } from "@/components/ui/loading";
 
-interface APIKey {
-  id: string;
-  name: string;
-  key: string;
-  created: string;
-  lastUsed: string | null;
+interface NotificationSettings {
+  email: {
+    enabled: boolean;
+    recipients: string[];
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number };
+    weeklyReports: boolean;
+  };
+  inApp: {
+    enabled: boolean;
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number };
+    weeklyReports: boolean;
+  };
+  webhook: {
+    enabled: boolean;
+    url: string;
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number | null };
+    weeklyReports: boolean;
+  };
 }
 
 export default function SettingsPage() {
   const router = useRouter();
   const { workspace, workspaces, deleteWorkspace } = useAuth();
-  const [_apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [workspaceSettings, setWorkspaceSettings] = useState<any>({});
-  const [notifications, setNotifications] = useState<any>({
+  const [workspaceSettings, setWorkspaceSettings] = useState<
+    Record<string, unknown>
+  >({});
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     email: {
       enabled: false,
       recipients: [],
@@ -93,9 +108,8 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setApiKeys(data.apiKeys || []);
         // parse settings from workspace (may be JSON string)
-        let settingsObj: any = {};
+        let settingsObj: Record<string, unknown> = {};
         try {
           settingsObj = data.workspace?.settings
             ? typeof data.workspace.settings === "string"
@@ -107,7 +121,10 @@ export default function SettingsPage() {
         }
         setWorkspaceSettings(settingsObj);
         if (settingsObj.notifications)
-          setNotifications(settingsObj.notifications);
+          setNotifications((prev) => ({
+            ...prev,
+            ...(settingsObj.notifications as Partial<NotificationSettings>),
+          }));
       }
     } catch (err: unknown) {
       toast({
@@ -194,7 +211,7 @@ export default function SettingsPage() {
           description: "Notification settings updated",
         });
         // update local cache
-        setWorkspaceSettings((s: any) => ({ ...s, notifications }));
+        setWorkspaceSettings((prev) => ({ ...prev, notifications }));
       } else {
         throw new Error(data.error || "Failed to save notifications");
       }
@@ -444,9 +461,9 @@ export default function SettingsPage() {
                       className="sr-only peer"
                       checked={!!notifications.email?.enabled}
                       onChange={(e) =>
-                        setNotifications((s: any) => ({
-                          ...s,
-                          email: { ...s.email, enabled: e.target.checked },
+                        setNotifications((prev) => ({
+                          ...prev,
+                          email: { ...prev.email, enabled: e.target.checked },
                         }))
                       }
                     />
@@ -464,10 +481,10 @@ export default function SettingsPage() {
                           ", "
                         )}
                         onChange={(e) =>
-                          setNotifications((s: any) => ({
-                            ...s,
+                          setNotifications((prev) => ({
+                            ...prev,
                             email: {
-                              ...s.email,
+                              ...prev.email,
                               recipients: e.target.value
                                 .split(",")
                                 .map((t) => t.trim())
@@ -504,10 +521,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.email?.flowFailures}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 email: {
-                                  ...s.email,
+                                  ...prev.email,
                                   flowFailures: e.target.checked,
                                 },
                               }))
@@ -533,12 +550,12 @@ export default function SettingsPage() {
                                 1000
                               }
                               onChange={(e) =>
-                                setNotifications((s: any) => ({
-                                  ...s,
+                                setNotifications((prev) => ({
+                                  ...prev,
                                   email: {
-                                    ...s.email,
+                                    ...prev.email,
                                     eventVolume: {
-                                      ...(s.email?.eventVolume || {}),
+                                      ...(prev.email?.eventVolume || {}),
                                       threshold: Number(e.target.value),
                                     },
                                   },
@@ -560,12 +577,12 @@ export default function SettingsPage() {
                               !!notifications.email?.eventVolume?.enabled
                             }
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 email: {
-                                  ...s.email,
+                                  ...prev.email,
                                   eventVolume: {
-                                    ...(s.email?.eventVolume || {}),
+                                    ...(prev.email?.eventVolume || {}),
                                     enabled: e.target.checked,
                                   },
                                 },
@@ -591,10 +608,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.email?.weeklyReports}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 email: {
-                                  ...s.email,
+                                  ...prev.email,
                                   weeklyReports: e.target.checked,
                                 },
                               }))
@@ -642,9 +659,9 @@ export default function SettingsPage() {
                       className="sr-only peer"
                       checked={!!notifications.inApp?.enabled}
                       onChange={(e) =>
-                        setNotifications((s: any) => ({
-                          ...s,
-                          inApp: { ...s.inApp, enabled: e.target.checked },
+                        setNotifications((prev) => ({
+                          ...prev,
+                          inApp: { ...prev.inApp, enabled: e.target.checked },
                         }))
                       }
                     />
@@ -675,10 +692,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.inApp?.flowFailures}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 inApp: {
-                                  ...s.inApp,
+                                  ...prev.inApp,
                                   flowFailures: e.target.checked,
                                 },
                               }))
@@ -704,12 +721,12 @@ export default function SettingsPage() {
                                 1000
                               }
                               onChange={(e) =>
-                                setNotifications((s: any) => ({
-                                  ...s,
+                                setNotifications((prev) => ({
+                                  ...prev,
                                   inApp: {
-                                    ...s.inApp,
+                                    ...prev.inApp,
                                     eventVolume: {
-                                      ...(s.inApp?.eventVolume || {}),
+                                      ...(prev.inApp?.eventVolume || {}),
                                       threshold: Number(e.target.value),
                                     },
                                   },
@@ -731,12 +748,12 @@ export default function SettingsPage() {
                               !!notifications.inApp?.eventVolume?.enabled
                             }
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 inApp: {
-                                  ...s.inApp,
+                                  ...prev.inApp,
                                   eventVolume: {
-                                    ...(s.inApp?.eventVolume || {}),
+                                    ...(prev.inApp?.eventVolume || {}),
                                     enabled: e.target.checked,
                                   },
                                 },
@@ -762,10 +779,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.inApp?.weeklyReports}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 inApp: {
-                                  ...s.inApp,
+                                  ...prev.inApp,
                                   weeklyReports: e.target.checked,
                                 },
                               }))
@@ -813,10 +830,10 @@ export default function SettingsPage() {
                       className="sr-only peer"
                       checked={!!notifications.webhook?.enabled}
                       onChange={(e) =>
-                        setNotifications((s: any) => ({
-                          ...s,
+                        setNotifications((prev) => ({
+                          ...prev,
                           webhook: {
-                            ...s.webhook,
+                            ...prev.webhook,
                             enabled: e.target.checked,
                           },
                         }))
@@ -834,16 +851,16 @@ export default function SettingsPage() {
                       <Input
                         value={notifications.webhook?.url || ""}
                         onChange={(e) =>
-                          setNotifications((s: any) => ({
-                            ...s,
-                            webhook: { ...s.webhook, url: e.target.value },
+                          setNotifications((prev) => ({
+                            ...prev,
+                            webhook: { ...prev.webhook, url: e.target.value },
                           }))
                         }
                         placeholder="https://api.example.com/webhooks/notifications"
                         className="transition-all focus:border-blue-500/50"
                       />
                       <p className="text-xs text-muted-foreground">
-                        We'll POST notification data to this URL
+                        We&apos;ll POST notification data to this URL
                       </p>
                     </div>
 
@@ -868,10 +885,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.webhook?.flowFailures}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 webhook: {
-                                  ...s.webhook,
+                                  ...prev.webhook,
                                   flowFailures: e.target.checked,
                                 },
                               }))
@@ -897,12 +914,12 @@ export default function SettingsPage() {
                                 1000
                               }
                               onChange={(e) =>
-                                setNotifications((s: any) => ({
-                                  ...s,
+                                setNotifications((prev) => ({
+                                  ...prev,
                                   webhook: {
-                                    ...s.webhook,
+                                    ...prev.webhook,
                                     eventVolume: {
-                                      ...(s.webhook?.eventVolume || {}),
+                                      ...(prev.webhook?.eventVolume || {}),
                                       threshold: Number(e.target.value),
                                     },
                                   },
@@ -924,12 +941,12 @@ export default function SettingsPage() {
                               !!notifications.webhook?.eventVolume?.enabled
                             }
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 webhook: {
-                                  ...s.webhook,
+                                  ...prev.webhook,
                                   eventVolume: {
-                                    ...(s.webhook?.eventVolume || {}),
+                                    ...(prev.webhook?.eventVolume || {}),
                                     enabled: e.target.checked,
                                   },
                                 },
@@ -955,10 +972,10 @@ export default function SettingsPage() {
                             className="sr-only peer"
                             checked={!!notifications.webhook?.weeklyReports}
                             onChange={(e) =>
-                              setNotifications((s: any) => ({
-                                ...s,
+                              setNotifications((prev) => ({
+                                ...prev,
                                 webhook: {
-                                  ...s.webhook,
+                                  ...prev.webhook,
                                   weeklyReports: e.target.checked,
                                 },
                               }))

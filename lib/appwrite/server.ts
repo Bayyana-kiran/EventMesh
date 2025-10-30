@@ -22,7 +22,7 @@ export function createSessionClient(session: string) {
   const client = new Client()
     .setEndpoint(APPWRITE_ENDPOINT)
     .setProject(APPWRITE_PROJECT_ID)
-    .setSession(session);
+    .setJWT(session);
 
   return {
     client,

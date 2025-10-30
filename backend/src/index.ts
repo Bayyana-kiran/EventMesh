@@ -5,6 +5,37 @@ import express from "express";
 import bodyParser from "body-parser";
 import { databases } from "./lib/appwrite";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "./lib/constants";
+import { Models } from "appwrite";
+
+interface Workspace extends Models.Document {
+  name: string;
+  owner_id: string;
+  created_at: string;
+  settings: string;
+}
+
+interface NotificationSettings {
+  email?: {
+    enabled: boolean;
+    recipients: string[];
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number };
+    weeklyReports: boolean;
+  };
+  inApp?: {
+    enabled: boolean;
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number };
+    weeklyReports: boolean;
+  };
+  webhook?: {
+    enabled: boolean;
+    url: string;
+    flowFailures: boolean;
+    eventVolume: { enabled: boolean; threshold: number | null };
+    weeklyReports: boolean;
+  };
+}
 
 const app = express();
 app.use(bodyParser.json());
@@ -35,24 +66,24 @@ app.get("/notification-settings/:workspaceId", async (req, res) => {
     return res.status(400).json({ error: "Workspace ID is required" });
   }
   try {
-    const workspace = await databases.getDocument(
+    const workspace = (await databases.getDocument(
       APPWRITE_DATABASE_ID,
       COLLECTION_IDS.WORKSPACES,
       workspaceId
-    );
+    )) as Workspace;
     let settings = {};
     try {
-      settings = (workspace as any).settings
-        ? JSON.parse((workspace as any).settings)
-        : {};
+      settings = workspace.settings ? JSON.parse(workspace.settings) : {};
     } catch {
-      settings = (workspace as any).settings || {};
+      settings = workspace.settings || {};
     }
     res.json({
       success: true,
-      settings: (settings as any).notifications || {},
+      settings:
+        (settings as { notifications?: NotificationSettings }).notifications ||
+        {},
     });
-  } catch (err) {
+  } catch {
     res
       .status(500)
       .json({ error: "Failed to fetch workspace notification settings" });
@@ -68,20 +99,19 @@ app.patch("/notification-settings/:workspaceId", async (req, res) => {
       .json({ error: "Workspace ID and notifications are required" });
   }
   try {
-    const workspace = await databases.getDocument(
+    const workspace = (await databases.getDocument(
       APPWRITE_DATABASE_ID,
       COLLECTION_IDS.WORKSPACES,
       workspaceId
-    );
+    )) as Workspace;
     let settings = {};
     try {
-      settings = (workspace as any).settings
-        ? JSON.parse((workspace as any).settings)
-        : {};
+      settings = workspace.settings ? JSON.parse(workspace.settings) : {};
     } catch {
-      settings = (workspace as any).settings || {};
+      settings = workspace.settings || {};
     }
-    (settings as any).notifications = notifications;
+    (settings as { notifications?: NotificationSettings }).notifications =
+      notifications;
     await databases.updateDocument(
       APPWRITE_DATABASE_ID,
       COLLECTION_IDS.WORKSPACES,
@@ -89,7 +119,7 @@ app.patch("/notification-settings/:workspaceId", async (req, res) => {
       { settings: JSON.stringify(settings) }
     );
     res.json({ success: true, settings: notifications });
-  } catch (err) {
+  } catch {
     res
       .status(500)
       .json({ error: "Failed to update workspace notification settings" });
@@ -245,20 +275,20 @@ export async function sendEmailSMTP(
  */
 async function getNotificationSettings(workspaceId: string) {
   try {
-    const workspace = await databases.getDocument(
+    const workspace = (await databases.getDocument(
       APPWRITE_DATABASE_ID,
       COLLECTION_IDS.WORKSPACES,
       workspaceId
-    );
+    )) as Workspace;
     let settings = {};
     try {
-      settings = (workspace as any).settings
-        ? JSON.parse((workspace as any).settings)
-        : {};
+      settings = workspace.settings ? JSON.parse(workspace.settings) : {};
     } catch {
-      settings = (workspace as any).settings || {};
+      settings = workspace.settings || {};
     }
-    return (settings as any).notifications || {};
+    return (
+      (settings as { notifications?: NotificationSettings }).notifications || {}
+    );
   } catch (err) {
     console.error("Failed to get notification settings:", err);
     return {};
@@ -328,7 +358,10 @@ async function sendInAppNotification(
 /**
  * Send webhook notification
  */
-async function sendWebhookNotification(workspaceId: string, payload: any) {
+async function sendWebhookNotification(
+  workspaceId: string,
+  payload: Record<string, unknown>
+) {
   const settings = await getNotificationSettings(workspaceId);
   const webhookSettings = settings.webhook;
 
@@ -426,7 +459,10 @@ export async function notifyHighEventVolume(
 /**
  * Send weekly report
  */
-export async function sendWeeklyReport(workspaceId: string, reportData: any) {
+export async function sendWeeklyReport(
+  workspaceId: string,
+  reportData: Record<string, unknown>
+) {
   const settings = await getNotificationSettings(workspaceId);
 
   const subject = `Weekly Report - ${new Date().toLocaleDateString()}`;

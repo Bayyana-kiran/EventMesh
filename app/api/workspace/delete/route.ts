@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
-import { COLLECTION_IDS } from "@/lib/types";
+import { COLLECTION_IDS, Workspace } from "@/lib/types";
 import { Query } from "node-appwrite";
 
 // DELETE /api/workspace/delete - Delete workspace and all associated data
@@ -51,11 +51,11 @@ export async function DELETE(request: NextRequest) {
 
     // Step 2: Verify workspace ownership
     console.log(`🔍 Verifying workspace ownership: ${workspaceId}`);
-    const workspace = await databases.getDocument(
+    const workspace = (await databases.getDocument(
       DATABASE_ID,
       COLLECTION_IDS.WORKSPACES,
       workspaceId
-    );
+    )) as Workspace;
 
     if (workspace.owner_id !== userId) {
       return NextResponse.json(

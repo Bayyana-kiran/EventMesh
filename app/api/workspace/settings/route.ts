@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
+import { Workspace } from "@/lib/types";
 
 const DATABASE_ID = "eventmesh-db";
 const WORKSPACES_COLLECTION = "workspaces";
@@ -24,11 +25,11 @@ export async function GET(request: Request) {
     }
 
     // Get workspace details
-    const workspace = await databases.getDocument(
+    const workspace = (await databases.getDocument(
       DATABASE_ID,
       WORKSPACES_COLLECTION,
       workspaceId
-    );
+    )) as Workspace;
 
     // Get API keys for workspace
     const apiKeysResponse = await databases.listDocuments(
@@ -83,12 +84,12 @@ export async function PATCH(request: Request) {
     if (name) updates.name = name;
     if (settings) updates.settings = JSON.stringify(settings);
 
-    const workspace = await databases.updateDocument(
+    const workspace = (await databases.updateDocument(
       DATABASE_ID,
       WORKSPACES_COLLECTION,
       workspaceId,
       updates
-    );
+    )) as Workspace;
 
     return NextResponse.json({
       success: true,

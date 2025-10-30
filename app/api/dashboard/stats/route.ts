@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
+import { Flow, Execution } from "@/lib/types";
 
 const DATABASE_ID = "eventmesh-db";
 const FLOWS_COLLECTION = "flows";
@@ -169,10 +170,10 @@ export async function GET(request: Request) {
           source: event.source || "Webhook",
           type: event.event_type || "webhook.received",
           flowName:
-            flows.find((f: any) => f.$id === event.flow_id)?.name || null,
+            (flows.find((f) => f.$id === event.flow_id) as Flow)?.name || null,
           createdAtIso: event.$createdAt,
           shortId: String(event.$id).slice(0, 8),
-          status: execution?.status || "pending",
+          status: (execution as Execution)?.status || "pending",
           time: timeAgo,
           flowId: event.flow_id,
         };

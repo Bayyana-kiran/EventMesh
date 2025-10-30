@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
-import { Query } from "node-appwrite";
+import { Query, AppwriteException } from "node-appwrite";
 import { APPWRITE_DATABASE_ID, COLLECTION_IDS } from "@/lib/constants";
+import { Execution } from "@/lib/types";
 
 // GET /api/executions - List executions
 export async function GET(request: NextRequest) {
@@ -25,8 +26,9 @@ export async function GET(request: NextRequest) {
         COLLECTION_IDS.EXECUTIONS,
         queries
       );
-    } catch (err: any) {
-      const resp = err?.response ?? err?.message ?? "";
+    } catch (err: unknown) {
+      const appwriteErr = err as AppwriteException;
+      const resp = appwriteErr.response ?? appwriteErr.message ?? "";
       const respStr = String(resp);
       if (
         workspaceId &&
@@ -52,9 +54,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse node_executions from string to array for each execution
-    const executions = executionsResponse.documents.map((execution: any) => ({
-      ...execution,
-      node_executions: JSON.parse(execution.node_executions || "[]"),
+    const executions = executionsResponse.documents.map((execution) => ({
+      ...(execution as Execution & { node_executions: string }),
+      node_executions: JSON.parse(
+        (execution as Execution & { node_executions: string })
+          .node_executions || "[]"
+      ),
     }));
 
     console.log(`✅ Found ${executionsResponse.documents.length} executions`);

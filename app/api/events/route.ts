@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
+import { Event, Flow } from "@/lib/types";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 const EVENTS_COLLECTION_ID =
@@ -46,17 +47,20 @@ export async function GET(request: NextRequest) {
     const eventsWithFlows = await Promise.all(
       eventsResponse.documents.map(async (event) => {
         try {
-          const flow = await databases.getDocument(
+          const flow = (await databases.getDocument(
             DATABASE_ID,
             FLOWS_COLLECTION_ID,
-            event.flow_id
-          );
+            (event as Event).flow_id
+          )) as Flow;
           return {
             ...event,
             flow_name: flow.name,
           };
         } catch (error) {
-          console.warn(`⚠️ Could not fetch flow ${event.flow_id}:`, error);
+          console.warn(
+            `⚠️ Could not fetch flow ${(event as Event).flow_id}:`,
+            error
+          );
           return {
             ...event,
             flow_name: "Unknown Flow",

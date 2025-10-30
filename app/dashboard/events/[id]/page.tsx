@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, Zap } from "lucide-react";
 import Link from "next/link";
 import { databases } from "@/lib/appwrite/server";
+import { Event, Flow } from "@/lib/types";
+
+interface EventWithExtras extends Event {
+  webhook_url?: string;
+  error_message?: string;
+}
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 const EVENTS_COLLECTION_ID =
@@ -24,21 +30,21 @@ export default async function EventDetailPage({
   const { id } = await params;
 
   try {
-    const event = await databases.getDocument(
+    const event = (await databases.getDocument(
       DATABASE_ID,
       EVENTS_COLLECTION_ID,
       id
-    );
+    )) as EventWithExtras;
 
     let flowName = "-";
     let flowWebhook: string | null = event.webhook_url || null;
     if (event.flow_id) {
       try {
-        const flow = await databases.getDocument(
+        const flow = (await databases.getDocument(
           DATABASE_ID,
           FLOWS_COLLECTION_ID,
           event.flow_id
-        );
+        )) as Flow;
         flowName = flow.name || flowName;
         // prefer webhook_url from the flow if available
         flowWebhook = flow.webhook_url || flowWebhook;
@@ -89,7 +95,7 @@ export default async function EventDetailPage({
                 <h3 className="font-medium">Payload</h3>
                 <pre className="mt-2 p-3 bg-muted/10 rounded text-sm overflow-auto max-h-60">
                   {event.payload
-                    ? JSON.stringify(JSON.parse(event.payload), null, 2)
+                    ? JSON.stringify(event.payload, null, 2)
                     : "(no payload)"}
                 </pre>
               </div>
@@ -97,7 +103,7 @@ export default async function EventDetailPage({
               <div>
                 <h3 className="font-medium">Headers</h3>
                 <pre className="mt-2 p-3 bg-muted/10 rounded text-sm overflow-auto max-h-40">
-                  {event.headers || "(no headers)"}
+                  {JSON.stringify(event.headers, null, 2) || "(no headers)"}
                 </pre>
               </div>
 
