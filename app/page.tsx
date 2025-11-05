@@ -123,12 +123,13 @@ export default function HomePage() {
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href="#demo">
+                  <Link href="https://youtu.be/oJeiLcSiw1A?si=GfVyb7K3gzWgtWgn" target="_blank" rel="noopener noreferrer">
                     <Button size="lg" variant="outline" className="gap-2">
                       <Play className="h-4 w-4" />
                       Watch Demo
                     </Button>
                   </Link>
+
                 </>
               )}
             </div>
