@@ -550,3 +550,7 @@ flowchart TD
   Retry --> Processor
   Processor -- repeated failures --> DLQ
 ```
+
+## Additional environment variables
+
+- `NODE_ENV`: Read by app/api/workspace/switch/route.ts:27. No static default was detected.
