@@ -550,3 +550,7 @@ flowchart TD
   Retry --> Processor
   Processor -- repeated failures --> DLQ
 ```
+
+## Additional environment variables
+
+- `GEMINI_API_KEY`: Read by app/api/ai/generate-flow/route.ts:31. No static default was detected.
