@@ -23,6 +23,8 @@ export function Loading({
 }: LoadingProps) {
   const content = (
     <div
+      role={text ? "status" : undefined}
+      aria-live={text ? "polite" : undefined}
       className={cn(
         "flex flex-col items-center justify-center gap-3",
         className
